@@ -185,7 +185,7 @@ Licensed under the **MIT License** — freely usable for educational and profess
 **Ajay Soni**  
 *BCA (Hons.) Data Science Student @ Chandigarh University, Unnao*  
 **Email:** programmingwithcode@gmail.com  
-**LinkedIn:** [linkedin.com/in/ajay-soni](#)
+**LinkedIn:** [linkedin.com/in/ajay-soni-cu](#)
 
 ---
 
