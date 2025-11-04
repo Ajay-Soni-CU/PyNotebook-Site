@@ -1,7 +1,6 @@
 # 🚀 JupyterLab Interface — Browser-Based Python Notebook with AI Assistant 🤖
 python -m http.server 8000
 # Then visit http://localhost:8000
-```
 
 
 ### Example Workflow
