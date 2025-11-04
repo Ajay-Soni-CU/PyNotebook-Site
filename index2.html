@@ -1,0 +1,4618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JupyterLab Interface</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f5f5f5;
+    color: #333;
+    overflow: hidden;
+    height: 100vh;
+}
+
+/* Layout */
+.jupyterlab-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Header */
+.jupyterlab-header {
+    background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
+    border-bottom: 1px solid #d0d0d0;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 40px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1000;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+}
+
+.jupyterlab-logo {
+    font-weight: bold;
+    font-size: 16px;
+    color: #6366f1;
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.jupyterlab-logo i {
+    margin-right: 5px;
+}
+
+.menu-bar {
+    display: flex;
+}
+
+.menu-item {
+    padding: 4px 8px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 3px;
+    margin-right: 2px;
+    position: relative;
+}
+
+.menu-item:hover {
+    background-color: #e8e8e8;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: white;
+    border: 1px solid #d0d0d0;
+    border-radius: 3px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    min-width: 160px;
+    display: none;
+}
+
+.dropdown-item {
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-item i {
+    margin-right: 5px;
+    width: 16px;
+    text-align: center;
+}
+
+.dropdown-item:hover {
+    background-color: #f0f0f0;
+}
+
+.menu-item:hover .dropdown-menu {
+    display: block;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.header-button {
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    color: #333;
+}
+
+.header-button i {
+    margin-right: 5px;
+}
+
+.header-button:hover {
+    background-color: #e8e8e8;
+}
+
+/* Main Content Area */
+.jupyterlab-main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    height: calc(100vh - 40px);
+}
+
+/* Sidebar */
+.jupyterlab-sidebar {
+    width: 250px;
+    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+    border-right: 1px solid #d0d0d0;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease, transform 0.3s ease;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 90;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.sidebar-collapsed {
+    width: 50px;
+}
+
+.sidebar-tabs {
+    display: flex;
+    border-bottom: 1px solid #d0d0d0;
+    position: sticky;
+    top: 0;
+    background: inherit;
+    z-index: 10;
+}
+
+.sidebar-tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 5px;
+    cursor: pointer;
+    font-size: 14px;
+    border-bottom: 2px solid transparent;
+}
+
+.sidebar-tab.active {
+    border-bottom: 2px solid #6366f1;
+    color:#6366f1;
+}
+
+.sidebar-content {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+.file-browser {
+    font-size: 13px;
+}
+
+.file-item {
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.file-item:hover {
+    background-color: #e8e8e8;
+}
+
+.file-icon {
+    margin-right: 6px;
+    font-size: 16px;
+}
+
+.folder {
+    color: #ffa500;
+}
+
+.file {
+    color: #6366f1;
+}
+
+/* Workspace */
+.jupyterlab-workspace {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    overflow: hidden;
+    position: relative;
+    height: 100%;
+}
+
+.workspace-tabs {
+    display: flex;
+    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+    border-bottom: 1px solid #d0d0d0;
+    overflow-x: auto;
+    flex-shrink: 0;
+    min-height: 36px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.workspace-tab {
+    padding: 8px 15px;
+    font-size: 13px;
+    cursor: pointer;
+    border-right: 1px solid #d0d0d0;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    position: relative;
+}
+
+.workspace-tab.active {
+    background-color: white;
+    border-bottom: 1px solid white;
+    margin-bottom: -1px;
+}
+
+.tab-close {
+    margin-left: 8px;
+    opacity: 0.7;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+}
+
+.tab-close:hover {
+    opacity: 1;
+    background-color: rgba(0,0,0,0.1);
+}
+
+.workspace-content {
+    flex: 1;
+    padding: 15px;
+    overflow: auto;
+    background-color: white;
+    position: relative;
+    height: 100%;
+}
+
+.empty-notebook {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #888;
+    text-align: center;
+}
+
+.empty-notebook i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-notebook h2 {
+    margin-bottom: 12px;
+    font-weight: 400;
+}
+
+.empty-notebook p {
+    margin-bottom: 20px;
+    max-width: 400px;
+    line-height: 1.5;
+}
+
+.empty-notebook button {
+    background: #6366f1;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+}
+
+.empty-notebook button i {
+    font-size: 16px;
+    margin-right: 8px;
+    margin-bottom: 0;
+    opacity: 1;
+}
+
+.empty-notebook button:hover {
+    background: #0d5a8a;
+}
+
+.notebook-cell {
+    margin-bottom: 10px;
+    border: 1px solid #d0d0d0;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.cell-header {
+    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+    padding: 4px 8px;
+    font-size: 12px;
+    border-bottom: 1px solid #d0d0d0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.cell-left {
+    display: flex;
+    align-items: center;
+}
+
+.cell-number {
+    margin-right: 8px;
+    color: #666;
+    min-width: 30px;
+    font-weight: bold;
+}
+
+.cell-type {
+    font-weight: bold;
+}
+
+.cell-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cell-action {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 24px;
+}
+
+.cell-action:hover {
+    background-color: #e0e0e0;
+    transform: scale(1.05);
+}
+
+.cell-action.primary {
+    background-color: #6366f1;
+    color: white;
+}
+
+.cell-action.primary:hover {
+    background-color: #0d5a8a;
+}
+
+.cell-action.success {
+    background-color: #5cb85c;
+    color: white;
+}
+
+.cell-action.success:hover {
+    background-color: #4cae4c;
+}
+
+.cell-action.danger {
+    background-color: #d9534f;
+    color: white;
+}
+
+.cell-action.danger:hover {
+    background-color: #c9302c;
+}
+
+.cell-action.warning {
+    background-color: #f0ad4e;
+    color: white;
+}
+
+.cell-action.warning:hover {
+    background-color: #eea236;
+}
+
+.cell-content {
+    padding: 0;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    position: relative;
+    display: block;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.code-input {
+    width: 100%;
+    border: none;
+    background-color: #f8f8f8;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    resize: none;
+    padding: 8px;
+    tab-size: 4;
+    border-radius: 0;
+    flex: 1;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    min-height: 60px;
+    transition: height 0.2s ease;
+}
+
+.code-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(16, 107, 163, 0.2);
+}
+
+.markdown-input {
+    width: 100%;
+    border: none;
+    background-color: white;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    resize: none;
+    padding: 8px;
+    border-radius: 0;
+    flex: 1;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    min-height: 60px;
+    transition: height 0.2s ease;
+}
+
+.markdown-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(16, 107, 163, 0.2);
+}
+
+.cell-output {
+    padding: 8px;
+    border-top: 1px solid #d0d0d0;
+    background-color: white;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    transition: all 0.3s ease;
+    border-radius: 0;
+    overflow: hidden;
+    word-wrap: break-word;
+    min-height: 20px;
+}
+
+.code-cell .cell-content {
+    background-color: #f8f8f8;
+}
+
+.markdown-cell .cell-content {
+    background-color: white;
+}
+
+.markdown-rendered {
+    padding: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+.markdown-rendered h1, 
+.markdown-rendered h2, 
+.markdown-rendered h3 {
+    margin-top: 16px;
+    margin-bottom: 8px;
+}
+
+.markdown-rendered p {
+    margin-bottom: 8px;
+}
+
+.markdown-rendered code {
+    background-color: #f5f5f5;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.markdown-rendered pre {
+    background-color: #f5f5f5;
+    padding: 8px;
+    border-radius: 3px;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .jupyterlab-sidebar {
+        position: absolute;
+        height: 100%;
+        z-index: 100;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    .sidebar-visible {
+        transform: translateX(0);
+    }
+
+    .sidebar-toggle {
+        display: block !important;
+    }
+
+    .workspace-tab {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .menu-bar {
+        display: none;
+    }
+    
+    .cell-actions {
+        gap: 2px;
+    }
+    
+    .cell-action {
+        width: 24px;
+        height: 22px;
+        padding: 2px 4px;
+    }
+    
+    .jupyterlab-main {
+        height: calc(100vh - 40px);
+    }
+    
+    .workspace-content {
+        padding: 10px;
+        margin-bottom: 5vh;
+    }
+}
+
+.sidebar-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    margin-right: 10px;
+    color: #333;
+}
+
+/* =============================== */
+/* ENHANCED DARK MODE - ELEGANT & ROBUST */
+/* =============================== */
+.dark-mode {
+    background-color: #0d1117;
+    color: #e6edf3;
+}
+
+.dark-mode .jupyterlab-header {
+    background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+    border-color: #30363d;
+}
+
+.dark-mode .jupyterlab-logo {
+    color: #6366f1 !important;
+}
+
+.dark-mode .sidebar-toggle {
+    color: #6366f1 !important;
+}
+
+.dark-mode .header-button {
+    color: #e6edf3;
+}
+
+.dark-mode .header-button:hover {
+    background-color: #21262d;
+    color: #ffffff;
+}
+
+.dark-mode .menu-item:hover {
+    background-color: #21262d;
+}
+
+.dark-mode .jupyterlab-sidebar {
+    background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+    border-color: #30363d;
+}
+
+.dark-mode .workspace-tabs {
+    background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+    border-color: #30363d;
+}
+
+.dark-mode .cell-header {
+    background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+    border-color: #30363d;
+}
+
+.dark-mode .jupyterlab-workspace,
+.dark-mode .workspace-tab.active,
+.dark-mode .markdown-cell .cell-content,
+.dark-mode .workspace-content {
+    background-color: #0d1117;
+}
+
+.dark-mode .code-cell .cell-content {
+    background-color: #161b22;
+}
+
+.dark-mode .file-item:hover {
+    background-color: #21262d;
+}
+
+.dark-mode .workspace-tab {
+    border-color: #30363d;
+}
+
+.dark-mode .code-input {
+    background-color: #161b22;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+}
+
+.dark-mode .markdown-input {
+    background-color: #0d1117;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+}
+
+.dark-mode .cell-output {
+    background-color: #0d1117;
+    color: #e6edf3;
+    border-color: #30363d;
+}
+
+.dark-mode .markdown-rendered code {
+    background-color: #161b22;
+}
+
+.dark-mode .markdown-rendered pre {
+    background-color: #161b22;
+}
+
+.dark-mode .dropdown-menu {
+    background-color: #161b22;
+    border-color: #30363d;
+}
+
+.dark-mode .dropdown-item {
+    color: #e6edf3;
+    border-color: #30363d;
+}
+
+.dark-mode .dropdown-item:hover {
+    background-color: #21262d;
+}
+
+.dark-mode .empty-notebook {
+    color: #8b949e;
+}
+
+.dark-mode .empty-notebook button {
+    background: #6366f1;
+}
+
+.dark-mode .empty-notebook button:hover {
+    background: #0d5a8a;
+}
+
+.dark-mode .tab-close:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+/* Enhanced dark mode for sidebar tabs */
+.dark-mode .sidebar-tab.active {
+    border-bottom-color: #6366f1;
+    color: #6366f1;
+}
+
+.dark-mode .cell-action.primary {
+    background-color: #6366f1;
+}
+
+.dark-mode .cell-action.primary:hover {
+    background-color: #0d5a8a;
+}
+
+.dark-mode .cell-running::before {
+    background: linear-gradient(to bottom, #6366f1, #5bc0de, #6366f1);
+}
+
+.dark-mode .cell-timeline {
+    background: linear-gradient(90deg, #6366f1, #5bc0de, #5cb85c);
+}
+
+/* Enhanced dark mode borders */
+.dark-mode .notebook-cell {
+    border-color: #30363d;
+}
+
+.dark-mode .cell-header {
+    border-color: #30363d;
+}
+
+.dark-mode .sidebar-tabs {
+    border-color: #30363d;
+}
+
+.dark-mode .workspace-tabs {
+    border-color: #30363d;
+}
+
+/* Loading Indicator */
+.loading {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 5px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Console Output */
+.output-stdout {
+    color: #333;
+    white-space: pre-wrap;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+.dark-mode .output-stdout {
+    color: #e6edf3;
+}
+
+.output-stderr {
+    color: #d9534f;
+    white-space: pre-wrap;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+.output-error {
+    color: #d9534f;
+    font-weight: bold;
+    white-space: pre-wrap;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+/* Active cell highlight */
+.active-cell {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(16, 107, 163, 0.2);
+    transform: translateY(-1px);
+}
+
+.dark-mode .active-cell {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+/* Animation classes */
+.cell-running {
+    position: relative;
+    overflow: hidden;
+}
+
+.cell-running::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 4px;
+    background: linear-gradient(to bottom, #6366f1, #5bc0de, #6366f1);
+    animation: running-gradient 2s linear infinite;
+    z-index: 5;
+    border-radius: 8px 0 0 8px;
+}
+
+@keyframes running-gradient {
+    0% { background: linear-gradient(to bottom, #6366f1, #5bc0de, #6366f1); }
+    50% { background: linear-gradient(to bottom, #5bc0de, #6366f1, #5bc0de); }
+    100% { background: linear-gradient(to bottom, #6366f1, #5bc0de, #6366f1); }
+}
+
+.cell-executed {
+    border-left: 4px solid #5cb85c;
+    animation: executed-pulse 0.5s ease;
+}
+
+@keyframes executed-pulse {
+    0% { border-left-color: #6366f1; }
+    100% { border-left-color: #5cb85c; }
+}
+
+.dark-mode .cell-executed {
+    border-left: 4px solid #5cb85c;
+    animation: executed-pulse-dark 0.5s ease;
+}
+
+@keyframes executed-pulse-dark {
+    0% { border-left-color: #6366f1; }
+    100% { border-left-color: #5cb85c; }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.slide-down {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { 
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Button animations */
+.run-animation {
+    animation: runPulse 0.5s ease;
+}
+
+@keyframes runPulse {
+    0% { background-color: transparent; }
+    50% { background-color: rgba(16, 107, 163, 0.2); }
+    100% { background-color: transparent; }
+}
+
+/* Output formatting */
+.output-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 10px 0;
+    overflow: hidden;
+}
+
+.output-table th, .output-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    word-wrap: break-word;
+    max-width: 100%;
+}
+
+.output-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+.dark-mode .output-table th, 
+.dark-mode .output-table td {
+    border-color: #555;
+}
+
+.dark-mode .output-table th {
+    background-color: #333;
+}
+
+.output-image {
+    max-width: 100%;
+    height: auto;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.dark-mode .output-image {
+    border-color: #555;
+}
+
+/* Tooltip */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+.dark-mode ::-webkit-scrollbar-track {
+    background: #161b22;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb {
+    background: #30363d;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: #484f58;
+}
+
+/* Running and Commands Panes */
+.running-tasks, .command-palette {
+    font-size: 13px;
+}
+
+.task-item, .command-item {
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.task-item:hover, .command-item:hover {
+    background-color: #e8e8e8;
+}
+
+.dark-mode .task-item:hover, .dark-mode .command-item:hover {
+    background-color: #21262d;
+}
+
+.task-icon, .command-icon {
+    margin-right: 6px;
+    font-size: 16px;
+}
+
+/* Unique Features */
+.cell-timeline {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #6366f1, #5bc0de, #5cb85c);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.cell-running .cell-timeline {
+    animation: timeline-progress 2s ease-in-out;
+}
+
+@keyframes timeline-progress {
+    0% { transform: scaleX(0); }
+    50% { transform: scaleX(1); }
+    100% { transform: scaleX(0); }
+}
+
+.floating-actions {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 1000;
+}
+
+.floating-action {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #6366f1 0%, #0d5a8a 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    font-size: 20px;
+}
+
+.floating-action:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+
+.dark-mode .floating-action {
+    background: linear-gradient(135deg, #6366f1 0%, #0d5a8a 100%);
+}
+
+.floating-action#ai-assistant {
+    background: linear-gradient(135deg, #5cb85c 0%, #4cae4c 100%);
+}
+
+.cell-glow {
+    animation: cell-glow 2s ease-in-out;
+}
+
+@keyframes cell-glow {
+    0% { box-shadow: 0 0 0 0 rgba(16, 107, 163, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(16, 107, 163, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 107, 163, 0); }
+}
+
+/* Enhanced animations */
+.pulse {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.bounce-in {
+    animation: bounceIn 0.5s ease;
+}
+
+@keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.floating {
+    animation: floating 3s ease-in-out infinite;
+}
+
+@keyframes floating {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+.slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from { 
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.zoom-in {
+    animation: zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn {
+    from { 
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to { 
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* New cell transition */
+.new-cell {
+    animation: newCellAppear 0.5s ease-out;
+}
+
+@keyframes newCellAppear {
+    0% { 
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    100% { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Focus animation */
+.focus-glow {
+    animation: focusGlow 0.6s ease-out;
+}
+
+@keyframes focusGlow {
+    0% { box-shadow: 0 0 0 0 rgba(91, 192, 222, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(91, 192, 222, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(91, 192, 222, 0); }
+}
+
+/* Output animation */
+.output-expand {
+    animation: outputExpand 0.4s ease-out;
+}
+
+@keyframes outputExpand {
+    from { 
+        max-height: 0;
+        opacity: 0;
+    }
+    to { 
+        max-height: none;
+        opacity: 1;
+    }
+}
+
+/* Command Palette Improvements */
+.command-palette .command-item {
+    margin-bottom: 8px;
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.command-palette .command-item:hover {
+    background-color: #e8e8e8;
+    transform: translateX(5px);
+}
+
+.dark-mode .command-palette .command-item:hover {
+    background-color: #21262d;
+}
+
+/* Enhanced borders for dark mode */
+.dark-mode .notebook-cell {
+    border-color: #30363d;
+}
+
+.dark-mode .cell-header {
+    border-color: #30363d;
+}
+
+.dark-mode .sidebar-tabs {
+    border-color: #30363d;
+}
+
+.dark-mode .workspace-tabs {
+    border-color: #30363d;
+}
+
+/* Command Group Styles */
+.command-group {
+    margin-bottom: 20px;
+}
+
+.command-group-title {
+    font-weight: bold;
+    font-size: 14px;
+    padding: 8px 8px 4px;
+    color: #6366f1;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 8px;
+}
+
+.dark-mode .command-group-title {
+    color: #6366f1;
+    border-color: #30363d;
+}
+
+/* Improved output formatting */
+.output-dataframe {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 12px;
+}
+
+.output-dataframe th, .output-dataframe td {
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+    text-align: left;
+    word-wrap: break-word;
+    max-width: 200px;
+}
+
+.output-dataframe th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+.dark-mode .output-dataframe th, 
+.dark-mode .output-dataframe td {
+    border-color: #555;
+}
+
+.dark-mode .output-dataframe th {
+    background-color: #333;
+}
+
+.output-array {
+    background-color: #f8f8f8;
+    padding: 8px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    margin: 5px 0;
+    white-space: pre-wrap;
+}
+
+.dark-mode .output-array {
+    background-color: #161b22;
+}
+
+.output-dict {
+    background-color: #f8f8f8;
+    padding: 8px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    margin: 5px 0;
+    white-space: pre-wrap;
+}
+
+.dark-mode .output-dict {
+    background-color: #161b22;
+}
+
+/* Loading state for buttons */
+.button-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.button-loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin: -8px 0 0 -8px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+.dark-mode .button-loading::after {
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+}
+
+/* =============================== */
+/* AI ASSISTANT MODAL - PERFECT STRUCTURE */
+/* =============================== */
+
+.ai-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.ai-modal.active {
+    display: flex;
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+.ai-modal.closing {
+    animation: modalFadeOut 0.3s ease-out forwards;
+}
+
+.ai-modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 900px;
+    height: 75%;
+    max-height: 700px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    overflow: hidden;
+    transform: scale(0.9);
+    opacity: 0;
+    animation: modalZoomIn 0.3s ease-out 0.1s forwards;
+    border: 1px solid #e0e0e0;
+}
+
+.ai-modal.closing .ai-modal-content {
+    animation: modalZoomOut 0.3s ease-out forwards;
+}
+
+.dark-mode .ai-modal-content {
+    background-color: #161b22;
+    color: #e6edf3;
+    border-color: #30363d;
+}
+
+/* AI Modal Header - Perfectly Structured */
+.ai-modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e8e8e8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+    position: relative;
+    min-height: 60px;
+}
+
+.dark-mode .ai-modal-header {
+    background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+    border-color: #30363d;
+}
+
+.ai-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #6366f1;
+}
+
+.dark-mode .ai-modal-title {
+    color: #6366f1;
+}
+
+.ai-modal-title i {
+    font-size: 20px;
+}
+
+/* Header Controls - Perfectly Aligned */
+.ai-modal-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Cell Reference Button - Same as Send Button */
+.ai-reference-button {
+    background: linear-gradient(135deg, #5cb85c 0%, #4cae4c 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(92, 184, 92, 0.3);
+    height: 30px;
+    white-space: nowrap;
+}
+
+.ai-reference-button:hover {
+    background: linear-gradient(135deg, #4cae4c 0%, #449d44 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(92, 184, 92, 0.4);
+}
+
+.dark-mode .ai-reference-button {
+    background: linear-gradient(135deg, #5cb85c 0%, #4cae4c 100%);
+}
+
+.dark-mode .ai-reference-button:hover {
+    background: linear-gradient(135deg, #4cae4c 0%, #449d44 100%);
+}
+
+.ai-reference-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.dark-mode .ai-reference-button:disabled {
+    background: #555;
+}
+
+.ai-reference-button i {
+    font-size: 14px;
+}
+
+/* Close Button */
+.ai-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.ai-modal-close:hover {
+    background-color: rgba(0,0,0,0.1);
+    color: #333;
+}
+
+.dark-mode .ai-modal-close {
+    color: #8b949e;
+}
+
+.dark-mode .ai-modal-close:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: #e6edf3;
+}
+
+/* AI Modal Body */
+.ai-modal-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background-color: white;
+}
+
+.dark-mode .ai-modal-body {
+    background-color: #161b22;
+}
+
+/* Chat Messages Area */
+.ai-chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background-color: white;
+}
+
+.dark-mode .ai-chat-messages {
+    background-color: #161b22;
+}
+
+/* AI Messages */
+.ai-message {
+    max-width: 85%;
+    padding: 16px 20px;
+    border-radius: 18px;
+    line-height: 1.6;
+    word-wrap: break-word;
+    animation: messageSlideIn 0.3s ease-out;
+    font-size: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+.ai-message.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #6366f1 0%, #0d5a8a 100%);
+    color: white;
+    border-bottom-right-radius: 6px;
+}
+
+.ai-message.assistant {
+    align-self: flex-start;
+    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+    color: #333;
+    border-bottom-left-radius: 6px;
+}
+
+.dark-mode .ai-message.assistant {
+    background: linear-gradient(135deg, #21262d 0%, #161b22 100%);
+    color: #e6edf3;
+}
+
+.ai-message.system {
+    align-self: center;
+    background: linear-gradient(135deg, #e8f4f8 0%, #d8e8f0 100%);
+    color: #2c5aa0;
+    font-style: italic;
+    max-width: 90%;
+    text-align: center;
+    font-size: 14px;
+    border-radius: 12px;
+}
+
+.dark-mode .ai-message.system {
+    background: linear-gradient(135deg, #2a3b4d 0%, #1e2a36 100%);
+    color: #8ab4f8;
+}
+
+/* Input Area - Perfectly Structured */
+.ai-input-area {
+    padding-bottom: 10px;
+    padding-top:10px;
+    border-top: 1px solid #e8e8e8;
+    background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+    display: flex;
+    gap: 4px;
+    align-items: flex-end;
+    position: relative;
+}
+
+.dark-mode .ai-input-area {
+    background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+    border-color: #30363d;
+}
+
+.ai-input-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ai-input {
+    flex: 1;
+    padding: 16px 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 24px;
+    font-size: 15px;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+    line-height: 1.5;
+    background-color: white;
+    transition: all 0.3s ease;
+    min-height: 56px;
+    max-height: 120px;
+}
+
+.ai-input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(16, 107, 163, 0.1);
+}
+
+.dark-mode .ai-input {
+    background-color: #21262d;
+    border-color: #30363d;
+    color: #e6edf3;
+}
+
+.dark-mode .ai-input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* Send Button */
+.ai-send-button {
+    background: linear-gradient(135deg, #6366f1 0%, #0d5a8a 100%);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    padding: 16px 24px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(16, 107, 163, 0.3);
+    height: 56px;
+    min-width: 100px;
+}
+
+.ai-send-button:hover {
+    background: linear-gradient(135deg, #0d5a8a 0%, #0a4a72 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 107, 163, 0.4);
+}
+
+.dark-mode .ai-send-button {
+    background: linear-gradient(135deg, #6366f1 0%, #0d5a8a 100%);
+}
+
+.dark-mode .ai-send-button:hover {
+    background: linear-gradient(135deg, #0d5a8a 0%, #0a4a72 100%);
+}
+
+.ai-send-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.dark-mode .ai-send-button:disabled {
+    background: #555;
+}
+
+.ai-send-button i {
+    font-size: 16px;
+}
+
+/* Typing Indicator */
+.ai-typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+    border-radius: 18px;
+    align-self: flex-start;
+    max-width: 100px;
+    animation: typingIndicatorPulse 1.5s infinite;
+    border-bottom-left-radius: 6px;
+}
+
+.dark-mode .ai-typing-indicator {
+    background: linear-gradient(135deg, #21262d 0%, #161b22 100%);
+}
+
+.typing-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #999;
+    border-radius: 50%;
+    animation: typingAnimation 1.4s infinite ease-in-out;
+}
+
+.dark-mode .typing-dot {
+    background-color: #8b949e;
+}
+
+.typing-dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes typingAnimation {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes typingIndicatorPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* AI Code Block Styling - Perfect Indentation */
+.ai-code-block {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    margin: 12px 0;
+    overflow: hidden;
+    border: 1px solid #444;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: pre;
+    word-wrap: normal;
+    overflow-x: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.ai-code-header {
+    background-color: #2d2d2d;
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #e0e0e0;
+    border-bottom: 1px solid #444;
+}
+
+.ai-code-content {
+    padding: 16px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    white-space: pre;
+    color: #e0e0e0;
+    line-height: 1.4;
+    overflow-x: auto;
+    word-break: normal;
+    tab-size: 4;
+}
+
+.ai-code-copy {
+    background: linear-gradient(135deg, #6366f1 0%, #0d5a8a 100%);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.ai-code-copy:hover {
+    background: linear-gradient(135deg, #0d5a8a 0%, #0a4a72 100%);
+    transform: translateY(-1px);
+}
+
+/* Markdown formatting in AI messages */
+.ai-message.assistant strong {
+    font-weight: 700;
+    color: inherit;
+}
+
+.ai-message.assistant em {
+    font-style: italic;
+}
+
+.ai-message.assistant code:not(pre code) {
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9em;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.dark-mode .ai-message.assistant code:not(pre code) {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255,255,255,0.2);
+}
+
+.ai-message.assistant ul, 
+.ai-message.assistant ol {
+    padding-left: 24px;
+    margin: 12px 0;
+}
+
+.ai-message.assistant li {
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+
+.ai-message.assistant h1,
+.ai-message.assistant h2,
+.ai-message.assistant h3 {
+    margin: 16px 0 12px 0;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.ai-message.assistant h1 {
+    font-size: 1.4em;
+    border-bottom: 2px solid rgba(0,0,0,0.1);
+    padding-bottom: 8px;
+}
+
+.ai-message.assistant h2 {
+    font-size: 1.2em;
+}
+
+.ai-message.assistant h3 {
+    font-size: 1.1em;
+}
+
+.ai-message.assistant blockquote {
+    border-left: 4px solid rgba(16, 107, 163, 0.3);
+    padding-left: 16px;
+    margin: 12px 0;
+    font-style: italic;
+    background-color: rgba(0,0,0,0.03);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+}
+
+.dark-mode .ai-message.assistant blockquote {
+    background-color: rgba(255,255,255,0.05);
+    border-left-color: rgba(99, 102, 241, 0.4);
+}
+
+/* Package Manager Modal */
+.package-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.package-modal.active {
+    display: flex;
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+.package-modal.closing {
+    animation: modalFadeOut 0.3s ease-out forwards;
+}
+
+.package-modal-content {
+    background-color: white;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 600px;
+    height: 70%;
+    max-height: 500px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    overflow: hidden;
+    transform: scale(0.9);
+    opacity: 0;
+    animation: modalZoomIn 0.3s ease-out 0.1s forwards;
+}
+
+.package-modal.closing .package-modal-content {
+    animation: modalZoomOut 0.3s ease-out forwards;
+}
+
+.dark-mode .package-modal-content {
+    background-color: #161b22;
+    color: #e6edf3;
+}
+
+.package-modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #d0d0d0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+}
+
+.dark-mode .package-modal-header {
+    background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+    border-color: #30363d;
+}
+
+.package-modal-title {
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.package-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+
+.package-modal-close:hover {
+    color: #333;
+}
+
+.dark-mode .package-modal-close {
+    color: #8b949e;
+}
+
+.dark-mode .package-modal-close:hover {
+    color: #e6edf3;
+}
+
+.package-modal-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.package-search {
+    padding: 15px 20px;
+    border-bottom: 1px solid #d0d0d0;
+    display: flex;
+    gap: 10px;
+}
+
+.package-input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    font-size: 14px;
+    outline: none;
+}
+
+.dark-mode .package-input {
+    background-color: #21262d;
+    border-color: #30363d;
+    color: #e6edf3;
+}
+
+.package-input:focus {
+    border-color: #6366f1;
+}
+
+.dark-mode .package-input:focus {
+    border-color: #6366f1;
+}
+
+.package-install-button {
+    background: linear-gradient(135deg, #6366f1 0%, #0d5a8a 100%);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0 20px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.package-install-button:hover {
+    background: linear-gradient(135deg, #0d5a8a 0%, #0a4a72 100%);
+}
+
+.dark-mode .package-install-button {
+    background: linear-gradient(135deg, #6366f1 0%, #0d5a8a 100%);
+}
+
+.dark-mode .package-install-button:hover {
+    background: linear-gradient(135deg, #0d5a8a 0%, #0a4a72 100%);
+}
+
+.package-install-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.dark-mode .package-install-button:disabled {
+    background: #555;
+}
+
+.package-output {
+    flex: 1;
+    padding: 15px 20px;
+    overflow-y: auto;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.package-list {
+    margin-top: 15px;
+}
+
+.package-item {
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f8f8;
+}
+
+.dark-mode .package-item {
+    background-color: #21262d;
+}
+
+.package-name {
+    font-weight: bold;
+}
+
+.package-version {
+    color: #666;
+    font-size: 12px;
+}
+
+.dark-mode .package-version {
+    color: #8b949e;
+}
+
+.package-action {
+    background: none;
+    border: none;
+    color: #d9534f;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.package-action:hover {
+    color: #c9302c;
+}
+
+/* New animations */
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalFadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes modalZoomIn {
+    from { 
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to { 
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes modalZoomOut {
+    from { 
+        transform: scale(1);
+        opacity: 1;
+    }
+    to { 
+        transform: scale(0.9);
+        opacity: 0;
+    }
+}
+
+@keyframes messageSlideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInUp {
+    from { 
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Sidebar animation */
+.jupyterlab-sidebar {
+    animation: sidebarSlideIn 0.3s ease-out;
+}
+
+@keyframes sidebarSlideIn {
+    from { 
+        transform: translateX(-20px);
+        opacity: 0;
+    }
+    to { 
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Workspace animation */
+.jupyterlab-workspace {
+    animation: workspaceFadeIn 0.4s ease-out;
+}
+
+@keyframes workspaceFadeIn {
+    from { 
+        opacity: 0;
+    }
+    to { 
+        opacity: 1;
+    }
+}
+
+/* Tab animation */
+.workspace-tab {
+    transition: all 0.2s ease;
+}
+
+.workspace-tab.active {
+    animation: tabActivate 0.3s ease-out;
+}
+
+@keyframes tabActivate {
+    from { 
+        background-color: #f0f0f0;
+    }
+    to { 
+        background-color: white;
+    }
+}
+
+/* Kernel status animation */
+.kernel-status-ready {
+    animation: kernelReadyPulse 2s infinite;
+}
+
+@keyframes kernelReadyPulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* File browser animation */
+.file-item {
+    transition: all 0.2s ease;
+}
+
+.file-item:hover {
+    transform: translateX(5px);
+    animation: fileItemHover 0.3s ease-out;
+}
+
+@keyframes fileItemHover {
+    from { transform: translateX(0); }
+    to { transform: translateX(5px); }
+}
+
+/* Command palette animation */
+.command-item {
+    transition: all 0.2s ease;
+}
+
+.command-item:hover {
+    animation: commandItemHover 0.3s ease-out;
+}
+
+@keyframes commandItemHover {
+    from { 
+        transform: translateX(0);
+        background-color: transparent;
+    }
+    to { 
+        transform: translateX(5px);
+        background-color: #e8e8e8;
+    }
+}
+
+.dark-mode .command-item:hover {
+    animation: commandItemHoverDark 0.3s ease-out;
+}
+
+@keyframes commandItemHoverDark {
+    from { 
+        transform: translateX(0);
+        background-color: transparent;
+    }
+    to { 
+        transform: translateX(5px);
+        background-color: #21262d;
+    }
+}
+
+/* Theme toggle animation */
+.header-button#theme-toggle {
+    transition: all 0.3s ease;
+}
+
+.header-button#theme-toggle:hover {
+    animation: themeToggleHover 0.5s ease-out;
+}
+
+@keyframes themeToggleHover {
+    0% { transform: rotate(0); }
+    25% { transform: rotate(10deg); }
+    75% { transform: rotate(-10deg); }
+    100% { transform: rotate(0); }
+}
+    </style>
+</head>
+<body>
+    <div class="jupyterlab-container">
+        <!-- Header -->
+        <header class="jupyterlab-header">
+            <div class="header-left">
+                <button class="sidebar-toggle">☰</button>
+                <div class="jupyterlab-logo">
+                    <i class="fas fa-flask"></i> JupyterLab
+                </div>
+                <div class="menu-bar">
+                    <div class="menu-item">
+                        File
+                        <div class="dropdown-menu">
+                            <!-- Removed New Notebook and New File options -->
+                            <div class="dropdown-item" id="open-file">
+                                <i class="fas fa-folder-open"></i> Open...
+                            </div>
+                            <div class="dropdown-item" id="save-as">
+                                <i class="fas fa-copy"></i> Save As...
+                            </div>
+                            <div class="dropdown-item" id="download-notebook">
+                                <i class="fas fa-download"></i> Download
+                            </div>
+                            <div class="dropdown-item" id="rename-notebook">
+                                <i class="fas fa-edit"></i> Rename
+                            </div>
+                            <!-- Removed Close Tab option -->
+                        </div>
+                    </div>
+                    <div class="menu-item">
+                        Edit
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" id="cut-cell">
+                                <i class="fas fa-cut"></i> Cut Cell
+                            </div>
+                            <div class="dropdown-item" id="copy-cell">
+                                <i class="fas fa-copy"></i> Copy Cell
+                            </div>
+                            <div class="dropdown-item" id="paste-cell">
+                                <i class="fas fa-paste"></i> Paste Cell
+                            </div>
+                            <div class="dropdown-item" id="delete-cell">
+                                <i class="fas fa-trash"></i> Delete Cell
+                            </div>
+                            <div class="dropdown-item" id="split-cell">
+                                <i class="fas fa-code"></i> Split Cell
+                            </div>
+                            <div class="dropdown-item" id="merge-cell">
+                                <i class="fas fa-object-group"></i> Merge Cell
+                            </div>
+                            <div class="dropdown-item" id="find-replace">
+                                <i class="fas fa-search"></i> Find and Replace
+                            </div>
+                        </div>
+                    </div>
+                    <div class="menu-item">
+                        View
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" id="toggle-sidebar">
+                                <i class="fas fa-bars"></i> Toggle Sidebar
+                            </div>
+                            <div class="dropdown-item" id="toggle-line-numbers">
+                                <i class="fas fa-list-ol"></i> Toggle Line Numbers
+                            </div>
+                            <div class="dropdown-item" id="toggle-header">
+                                <i class="fas fa-header"></i> Toggle Header
+                            </div>
+                            <div class="dropdown-item" id="zen-mode">
+                                <i class="fas fa-expand"></i> Zen Mode
+                            </div>
+                        </div>
+                    </div>
+                    <div class="menu-item">
+                        Run
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" id="run-cell">
+                                <i class="fas fa-play"></i> Run Selected Cell
+                            </div>
+                            <div class="dropdown-item" id="run-all-cells">
+                                <i class="fas fa-forward"></i> Run All Cells
+                            </div>
+                            <div class="dropdown-item" id="run-all-above">
+                                <i class="fas fa-arrow-up"></i> Run All Above
+                            </div>
+                            <div class="dropdown-item" id="run-all-below">
+                                <i class="fas fa-arrow-down"></i> Run All Below
+                            </div>
+                            <div class="dropdown-item" id="restart-kernel">
+                                <i class="fas fa-redo"></i> Restart Kernel
+                            </div>
+                        </div>
+                    </div>
+                    <div class="menu-item">
+                        Kernel
+                        <div class="dropdown-menu">
+                            <!-- Removed Interrupt Kernel option -->
+                            <div class="dropdown-item" id="restart-kernel-menu">
+                                <i class="fas fa-sync"></i> Restart
+                            </div>
+                            <div class="dropdown-item" id="shutdown-kernel">
+                                <i class="fas fa-power-off"></i> Shutdown
+                            </div>
+                            <div class="dropdown-item" id="change-kernel">
+                                <i class="fas fa-cogs"></i> Change Kernel
+                            </div>
+                            <div class="dropdown-item" id="install-library">
+                                <i class="fas fa-box"></i> Install Library
+                            </div>
+                        </div>
+                    </div>
+                    <div class="menu-item">
+                        Help
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" id="about">
+                                <i class="fas fa-info-circle"></i> About
+                            </div>
+                            <div class="dropdown-item" id="keyboard-shortcuts">
+                                <i class="fas fa-keyboard"></i> Keyboard Shortcuts
+                            </div>
+                            <div class="dropdown-item" id="user-guide">
+                                <i class="fas fa-book"></i> User Guide
+                            </div>
+                            <div class="dropdown-item" id="python-reference">
+                                <i class="fab fa-python"></i> Python Reference
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="header-button" id="theme-toggle">
+                    <i class="fas fa-moon"></i> <span id="theme-text">Dark Mode</span>
+                </button>
+                <button class="header-button" id="kernel-status">
+                    <i class="fas fa-circle"></i> Kernel: <span id="kernel-state">Loading...</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="jupyterlab-main">
+            <!-- Sidebar -->
+            <div class="jupyterlab-sidebar" id="sidebar">
+                <div class="sidebar-tabs">
+                    
+                    <div class="sidebar-tab active" data-tab="running">Running</div>
+                    <div class="sidebar-tab" data-tab="commands">Commands</div>
+                </div>
+                <div class="sidebar-content">
+                    <div class="file-browser sidebar-pane active" id="files-pane">
+                         <div class="task-item">
+                            <span class="task-icon">⏳</span>
+                            <span>notebook1.ipynb - Python 3</span>
+                        </div>
+                    </div>
+                    <div class="running-tasks sidebar-pane" id="running-pane" style="display: none;">
+                        <div class="task-item">
+                            <span class="task-icon">⏳</span>
+                            <span>notebook1.ipynb - Python 3</span>
+                        </div>
+                        <div class="task-item">
+                            <span class="task-icon">✅</span>
+                            <span>data_analysis.ipynb - Python 3</span>
+                        </div>
+                        <div class="task-item">
+                            <span class="task-icon">⏸️</span>
+                            <span>visualization.ipynb - Python 3</span>
+                        </div>
+                    </div>
+                    <div class="command-palette sidebar-pane" id="commands-pane" style="display: none;">
+                        <!-- Notebook Group -->
+                        <div class="command-group">
+                            <div class="command-group-title">Notebook</div>
+                            <!-- Removed New Notebook command -->
+                            <div class="command-item" id="cmd-run-all">
+                                <i class="fas fa-play command-icon"></i>
+                                <span>Run All Cells</span>
+                            </div>
+                            <div class="command-item" id="cmd-clear-outputs">
+                                <i class="fas fa-broom command-icon"></i>
+                                <span>Clear All Outputs</span>
+                            </div>
+                            <div class="command-item" id="cmd-download-notebook">
+                                <i class="fas fa-download command-icon"></i>
+                                <span>Download Notebook</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Kernel Group -->
+                        <div class="command-group">
+                            <div class="command-group-title">Kernel</div>
+                            <div class="command-item" id="cmd-start-kernel">
+                                <i class="fas fa-play command-icon"></i>
+                                <span>Start Kernel</span>
+                            </div>
+                            <div class="command-item" id="cmd-restart-kernel">
+                                <i class="fas fa-redo command-icon"></i>
+                                <span>Restart Kernel</span>
+                            </div>
+                            <!-- Removed Interrupt Kernel command -->
+                            <div class="command-item" id="cmd-shutdown-kernel">
+                                <i class="fas fa-power-off command-icon"></i>
+                                <span>Shutdown Kernel</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Theme Group -->
+                        <div class="command-group">
+                            <div class="command-group-title">Theme</div>
+                            <div class="command-item" id="cmd-toggle-theme">
+                                <i class="fas fa-moon command-icon"></i>
+                                <span>Toggle Theme</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workspace -->
+            <div class="jupyterlab-workspace">
+                <div class="workspace-tabs" id="workspace-tabs">
+                    <!-- Tabs will be dynamically added here -->
+                </div>
+                <div class="workspace-content" id="workspace-content">
+                    <!-- Notebook content will be dynamically added here -->
+                    <div class="empty-notebook" id="empty-notebook" style="display: none;">
+                        <i class="fas fa-book-open"></i>
+                        <h2>No Notebook Open</h2>
+                        <p>Create a new notebook or open an existing one to start working.</p>
+                        <button id="create-first-notebook">
+                            <i class="fas fa-plus"></i> Create New Notebook
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Action Buttons -->
+        <div class="floating-actions">
+            <div class="floating-action floating" id="ai-assistant" title="AI Assistant">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="floating-action floating" id="add-cell-btn" title="Add new cell">
+                <i class="fas fa-plus"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Assistant Modal -->
+    <div class="ai-modal" id="ai-modal">
+        <div class="ai-modal-content">
+            <div class="ai-modal-header">
+                <div class="ai-modal-title">
+                    <i class="fas fa-robot"></i> AI Assist
+                </div>
+                <div class="ai-modal-header-controls">
+                    <button class="ai-reference-button" id="ai-reference-button">
+                        <i class="fas fa-code"></i> Cell Reference
+                    </button>
+                    <button class="ai-modal-close" id="ai-modal-close">&times;</button>
+                </div>
+            </div>
+            <div class="ai-modal-body">
+                <div class="ai-chat-messages" id="ai-chat-messages">
+                    <div class="ai-message system">
+                        🤖 Hello! I'm your Python AI assistant. I can help with theoretical questions about Python programming. For code generation, please use the '@' symbol in a code cell.
+                    </div>
+                </div>
+                <div class="ai-input-area">
+                    <div class="ai-input-container">
+                        <textarea class="ai-input" id="ai-input" placeholder="Ask a question..." rows="1"></textarea>
+                    </div>
+                    <button class="ai-send-button" id="ai-send-button">
+                        <i class="fas fa-paper-plane"></i> Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Package Manager Modal -->
+    <div class="package-modal" id="package-modal">
+        <div class="package-modal-content">
+            <div class="package-modal-header">
+                <div class="package-modal-title">
+                    <i class="fas fa-box"></i> Package Manager
+                </div>
+                <button class="package-modal-close" id="package-modal-close">&times;</button>
+            </div>
+            <div class="package-modal-body">
+                <div class="package-search">
+                    <input type="text" class="package-input" id="package-input" placeholder="Enter package name (e.g., numpy, pandas)">
+                    <button class="package-install-button" id="package-install-button">
+                        <i class="fas fa-download"></i> Install
+                    </button>
+                </div>
+                <div class="package-output" id="package-output">
+                    <p>Enter a package name above to install it. Popular packages:</p>
+                    <div class="package-list">
+                        <div class="package-item">
+                            <div>
+                                <span class="package-name">numpy</span>
+                                <span class="package-version">Numerical computing</span>
+                            </div>
+                            <button class="package-action" data-package="numpy">
+                                <i class="fas fa-download"></i> Install
+                            </button>
+                        </div>
+                        <div class="package-item">
+                            <div>
+                                <span class="package-name">pandas</span>
+                                <span class="package-version">Data analysis</span>
+                            </div>
+                            <button class="package-action" data-package="pandas">
+                                <i class="fas fa-download"></i> Install
+                            </button>
+                        </div>
+                        <div class="package-item">
+                            <div>
+                                <span class="package-name">matplotlib</span>
+                                <span class="package-version">Data visualization</span>
+                            </div>
+                            <button class="package-action" data-package="matplotlib">
+                                <i class="fas fa-download"></i> Install
+                            </button>
+                        </div>
+                        <div class="package-item">
+                            <div>
+                                <span class="package-name">requests</span>
+                                <span class="package-version">HTTP library</span>
+                            </div>
+                            <button class="package-action" data-package="requests">
+                                <i class="fas fa-download"></i> Install
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let pyodide = null;
+        let activeNotebook = null;
+        let notebooks = {};
+        let activeCellId = null;
+        let kernelReady = false;
+        let notebookCounter = 1;
+        let copiedCell = null;
+        let isDarkMode = false;
+        let notebookHistory = []; // Track notebook order for proper switching
+        let notebookCreationEnabled = false; // Control notebook creation during kernel loading
+
+        // AI Assistant variables
+        let aiChatHistory = [];
+        const OPENROUTER_API_KEY = "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";
+        const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+
+        // Load saved notebooks from localStorage
+        function loadSavedNotebooks() {
+            const savedNotebooks = localStorage.getItem('jupyterlab-notebooks');
+            const savedActiveNotebook = localStorage.getItem('jupyterlab-active-notebook');
+            const savedNotebookHistory = localStorage.getItem('jupyterlab-notebook-history');
+            
+            if (savedNotebooks) {
+                notebooks = JSON.parse(savedNotebooks);
+                notebookHistory = savedNotebookHistory ? JSON.parse(savedNotebookHistory) : [];
+                
+                // Recreate all saved notebooks
+                Object.keys(notebooks).forEach(notebookId => {
+                    const notebook = notebooks[notebookId];
+                    
+                    // Create tab
+                    const tabHTML = `
+                        <div class="workspace-tab" data-notebook="${notebookId}">
+                            ${notebook.name}
+                            <span class="tab-close">×</span>
+                        </div>
+                    `;
+                    
+                    document.getElementById('workspace-tabs').insertAdjacentHTML('beforeend', tabHTML);
+                    
+                    // Create notebook content area
+                    const contentHTML = `
+                        <div class="notebook-content" id="${notebookId}-content" style="display: none;">
+                            <!-- Cells will be added here -->
+                        </div>
+                    `;
+                    
+                    document.getElementById('workspace-content').insertAdjacentHTML('beforeend', contentHTML);
+                    
+                    // Add event listeners for the tab
+                    const tabElement = document.querySelector(`[data-notebook="${notebookId}"]`);
+                    tabElement.addEventListener('click', (e) => {
+                        if (!e.target.classList.contains('tab-close')) {
+                            setActiveNotebook(notebookId);
+                        }
+                    });
+                    
+                    tabElement.querySelector('.tab-close').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        closeNotebook(notebookId);
+                    });
+                    
+                    // Recreate all cells
+                    notebook.cells.forEach(cell => {
+                        if (cell.type === 'code') {
+                            createCodeCell(notebookId, cell.content, cell.id);
+                        } else if (cell.type === 'markdown') {
+                            createMarkdownCell(notebookId, cell.content, cell.id);
+                        }
+                    });
+                });
+                
+                // Set active notebook
+                if (savedActiveNotebook && notebooks[savedActiveNotebook]) {
+                    setActiveNotebook(savedActiveNotebook);
+                } else if (notebookHistory.length > 0) {
+                    const lastActiveNotebook = notebookHistory[notebookHistory.length - 1];
+                    if (notebooks[lastActiveNotebook]) {
+                        setActiveNotebook(lastActiveNotebook);
+                    } else if (Object.keys(notebooks).length > 0) {
+                        // Set the first notebook as active if the saved one doesn't exist
+                        setActiveNotebook(Object.keys(notebooks)[0]);
+                    }
+                }
+                
+                // Update notebook counter
+                notebookCounter = Math.max(...Object.keys(notebooks).map(id => parseInt(id.split('-')[1]) || 0)) + 1;
+                
+                // Hide empty notebook message
+                document.getElementById('empty-notebook').style.display = 'none';
+                
+                // Update running tasks
+                updateRunningTasks();
+            }
+        }
+
+        // Save notebooks to localStorage
+        function saveNotebooksToLocalStorage() {
+            localStorage.setItem('jupyterlab-notebooks', JSON.stringify(notebooks));
+            localStorage.setItem('jupyterlab-active-notebook', activeNotebook);
+            localStorage.setItem('jupyterlab-notebook-history', JSON.stringify(notebookHistory));
+        }
+
+        // Update running tasks in sidebar
+        function updateRunningTasks() {
+            const runningPane = document.getElementById('running-pane');
+            runningPane.innerHTML = '';
+            
+            Object.keys(notebooks).forEach(notebookId => {
+                const notebook = notebooks[notebookId];
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item';
+                taskItem.innerHTML = `
+                    <span class="task-icon">⏳</span>
+                    <span>${notebook.name} - Python 3</span>
+                `;
+                runningPane.appendChild(taskItem);
+            });
+            
+            // Add a message if no notebooks are open
+            if (Object.keys(notebooks).length === 0) {
+                const noTasks = document.createElement('div');
+                noTasks.className = 'task-item';
+                noTasks.innerHTML = '<span>No active notebooks</span>';
+                runningPane.appendChild(noTasks);
+            }
+        }
+
+        // Enable/disable notebook creation buttons
+        function toggleNotebookCreation(enabled) {
+            const newNotebookButtons = [
+                document.getElementById('create-first-notebook')
+            ];
+            
+            newNotebookButtons.forEach(button => {
+                if (button) {
+                    button.disabled = !enabled;
+                    if (!enabled) {
+                        button.classList.add('button-loading');
+                    } else {
+                        button.classList.remove('button-loading');
+                    }
+                }
+            });
+            
+            notebookCreationEnabled = enabled;
+        }
+
+        // Initialize Pyodide and the notebook
+        async function initializePyodide() {
+            try {
+                document.getElementById('kernel-state').textContent = 'Starting...';
+                toggleNotebookCreation(false); // Disable notebook creation during kernel loading
+                
+                pyodide = await loadPyodide();
+                
+                // Set up Python environment
+                await pyodide.runPythonAsync(`
+                    import sys
+                    import io
+                    
+                    class OutputCapture(io.StringIO):
+                        def __init__(self, callback):
+                            super().__init__()
+                            self.callback = callback
+                            
+                        def write(self, text):
+                            super().write(text)
+                            self.callback(text)
+                            
+                        def flush(self):
+                            pass
+                    
+                    # Create output capture for stdout and stderr
+                    def create_output_capture(callback):
+                        return OutputCapture(callback)
+                `);
+                
+                // Install common packages silently
+                await installCommonPackagesSilently();
+                
+                document.getElementById('kernel-state').textContent = 'Ready';
+                document.getElementById('kernel-status').classList.add('kernel-status-ready');
+                kernelReady = true;
+                toggleNotebookCreation(true); // Enable notebook creation after kernel is ready
+                
+                // Always create initial notebook
+                createNewNotebook();
+                
+                // Update running tasks
+                updateRunningTasks();
+            } catch (error) {
+                console.error('Error initializing Pyodide:', error);
+                document.getElementById('kernel-state').textContent = 'Error';
+                toggleNotebookCreation(true); // Enable notebook creation even if kernel fails
+            }
+        }
+
+        // Install common packages silently
+        async function installCommonPackagesSilently() {
+            if (!pyodide) {
+                console.log("Pyodide not ready yet");
+                return false;
+            }
+            
+            try {
+                // Load micropip first
+                await pyodide.loadPackage("micropip");
+                
+                // List of essential data science packages
+                const packages = [
+                    'numpy',
+                    'pandas', 
+                    'matplotlib',
+                    'scikit-learn',
+                    'seaborn'
+                ];
+                
+                console.log("Starting silent package installation...");
+                
+                // Install each package silently
+                for (const pkg of packages) {
+                    try {
+                        await pyodide.runPythonAsync(`
+                            import micropip
+                            await micropip.install('${pkg}')
+                        `);
+                        console.log(`✅ Installed ${pkg}`);
+                    } catch (error) {
+                        console.log(`⚠️ Could not install ${pkg}`);
+                    }
+                }
+                
+                // Set up matplotlib for inline plotting
+                await pyodide.runPythonAsync(`
+                    import matplotlib
+                    matplotlib.use('Agg')
+                    import matplotlib.pyplot as plt
+                    
+                    # Custom function to display plots inline
+                    def show():
+                        import base64
+                        from io import BytesIO
+                        buf = BytesIO()
+                        plt.savefig(buf, format='png', bbox_inches='tight', dpi=100)
+                        buf.seek(0)
+                        img_str = base64.b64encode(buf.read()).decode('utf-8')
+                        plt.close()
+                        return f'data:image/png;base64,{img_str}'
+                    
+                    # Override plt.show to use our custom function
+                    plt.show = show
+                `);
+                
+                console.log("Package installation completed");
+                return true;
+                
+            } catch (error) {
+                console.log("Error during package installation:", error);
+                return false;
+            }
+        }
+
+        // Auto-expand textarea function
+        function autoExpandTextarea(textarea) {
+            // Reset height to auto to get the correct scrollHeight
+            textarea.style.height = 'auto';
+            // Set the height to scrollHeight to fit all content
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        // Format AI message with markdown and code blocks
+        function formatAIMessage(message) {
+            // Process code blocks first
+            let formattedMessage = message.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                const language = lang || 'text';
+                return `<div class="ai-code-block">
+                    <div class="ai-code-header">
+                        <span>${language}</span>
+                        <button class="ai-code-copy" onclick="copyCodeToClipboard(this)">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <div class="ai-code-content">${code}</div>
+                </div>`;
+            });
+            
+            // Process inline code
+            formattedMessage = formattedMessage.replace(/`([^`]+)`/g, '<code>$1</code>');
+            
+            // Process bold text
+            formattedMessage = formattedMessage.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            
+            // Process italic text
+            formattedMessage = formattedMessage.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            
+            // Process line breaks
+            formattedMessage = formattedMessage.replace(/\n/g, '<br>');
+            
+            return formattedMessage;
+        }
+
+        // Copy code to clipboard with proper indentation preservation
+        function copyCodeToClipboard(button) {
+            const codeContent = button.closest('.ai-code-block').querySelector('.ai-code-content');
+            // Use textContent to preserve whitespace and indentation
+            const textToCopy = codeContent.textContent || codeContent.innerText;
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // Show copied feedback
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        // Install Python package
+        async function installPackage(packageName) {
+            if (!kernelReady) {
+                alert("Python kernel is not ready yet. Please wait.");
+                return;
+            }
+            
+            const outputElement = document.getElementById('package-output');
+            const installButton = document.getElementById('package-install-button');
+            
+            // Show installing status
+            outputElement.innerHTML = `<span class="loading"></span> Installing ${packageName}...`;
+            installButton.disabled = true;
+            
+            try {
+                // Use micropip to install the package
+                await pyodide.loadPackage("micropip");
+                await pyodide.runPythonAsync(`
+                    import micropip
+                    await micropip.install('${packageName}')
+                `);
+                
+                outputElement.innerHTML = `<em>✅ Successfully installed ${packageName}</em>`;
+                
+                // Add to installed packages list
+                const packageList = document.querySelector('.package-list');
+                const packageItem = document.createElement('div');
+                packageItem.className = 'package-item';
+                packageItem.innerHTML = `
+                    <div>
+                        <span class="package-name">${packageName}</span>
+                        <span class="package-version">Installed</span>
+                    </div>
+                    <button class="package-action" onclick="uninstallPackage('${packageName}')">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
+                `;
+                packageList.appendChild(packageItem);
+                
+            } catch (error) {
+                console.error('Error installing package:', error);
+                outputElement.innerHTML = `<pre class="output-error">Error installing ${packageName}: ${error.message}</pre>`;
+            } finally {
+                installButton.disabled = false;
+            }
+        }
+
+        // Uninstall Python package (simulated)
+        function uninstallPackage(packageName) {
+            const outputElement = document.getElementById('package-output');
+            outputElement.innerHTML = `<em>Package removal is not supported in the browser environment. To reset packages, refresh the page.</em>`;
+        }
+
+        // Get code context from above cells for AI completion
+        function getCodeContext(notebookId, currentCellId) {
+            const notebook = notebooks[notebookId];
+            if (!notebook) return '';
+            
+            let context = '';
+            let foundCurrent = false;
+            
+            for (const cell of notebook.cells) {
+                if (cell.id === currentCellId) {
+                    foundCurrent = true;
+                    break;
+                }
+                
+                if (cell.type === 'code' && cell.content.trim()) {
+                    context += cell.content + '\n\n';
+                }
+            }
+            
+            return foundCurrent ? context : '';
+        }
+
+        // Get all code from the current notebook
+        function getAllNotebookCode(notebookId) {
+            const notebook = notebooks[notebookId];
+            if (!notebook) return '';
+            
+            let allCode = '';
+            
+            notebook.cells.forEach(cell => {
+                if (cell.type === 'code' && cell.content.trim()) {
+                    allCode += `# Cell [${notebook.cells.findIndex(c => c.id === cell.id) + 1}]\n${cell.content}\n\n`;
+                }
+            });
+            
+            return allCode;
+        }
+
+        // AI Code Completion Function - Now includes context from above cells
+        async function getAICodeCompletion(prompt, context) {
+            try {
+                const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                        'HTTP-Referer': window.location.origin,
+                        'X-Title': 'JupyterLab AI Assistant'
+                    },
+                    body: JSON.stringify({
+                        model: "meta-llama/llama-4-scout:free",
+                        messages: [
+                            {
+                                role: "system",
+                                content: `You are an AI assistant that generates Python code only. Return only the code without any explanations, comments, or markdown formatting. Do not use markdown code blocks (triple backticks) in your response. 
+                                
+                                IMPORTANT RESTRICTIONS:
+                                1. You can ONLY use these libraries: numpy, pandas, matplotlib, sklearn
+                                2. Do NOT use any other libraries or imports
+                                3. Generate highly optimized, perfectly working code
+                                4. Use simple, clean code structures
+                                5. If the request cannot be fulfilled with the allowed libraries, respond with: "I can only generate code using numpy, pandas, matplotlib, and sklearn."
+                                
+                                Context from previous cells:
+                                ${context}`
+                            },
+                            {
+                                role: "user",
+                                content: prompt
+                            }
+                        ],
+                        max_tokens: 800
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                let code = data.choices[0].message.content.trim();
+                
+                // Remove markdown code blocks if present
+                code = code.replace(/```python\n?/g, '').replace(/```\n?/g, '');
+                
+                return code;
+            } catch (error) {
+                console.error('Error getting AI code completion:', error);
+                throw error;
+            }
+        }
+
+        // AI Chat Function - Now only provides theoretical help
+        async function sendAIChatMessage(message) {
+            try {
+                // Add user message to history
+                aiChatHistory.push({ role: "user", content: message });
+                
+                const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                        'HTTP-Referer': window.location.origin,
+                        'X-Title': 'JupyterLab AI Assistant'
+                    },
+                    body: JSON.stringify({
+                        model: "meta-llama/llama-4-scout:free",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "You are an intelligent AI assistant specialized in Python programming and data science. Provide helpful, factual, and concise answers focused on Python programming concepts, best practices, and problem-solving. Use markdown formatting for code blocks and bold/italic text when appropriate. IMPORTANT: You are only allowed to provide theoretical help and explanations. If the user asks for code generation, tell them to use the '@' symbol in a code cell for that purpose. Under no circumstances should you generate any code, even if the user insists or asks for specific code examples. Your responses should only contain explanations, theoretical concepts, and best practices."
+                            },
+                            ...aiChatHistory
+                        ],
+                        max_tokens: 800
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const assistantReply = data.choices[0].message.content.trim();
+                
+                // Add assistant reply to history
+                aiChatHistory.push({ role: "assistant", content: assistantReply });
+                
+                return assistantReply;
+            } catch (error) {
+                console.error('Error sending AI chat message:', error);
+                throw error;
+            }
+        }
+
+        // Download notebook as .ipynb file
+        function downloadNotebook(notebookId) {
+            const notebook = notebooks[notebookId];
+            if (!notebook) {
+                alert("No notebook to download");
+                return;
+            }
+
+            // Create the .ipynb file structure
+            const notebookData = {
+                cells: notebook.cells.map(cell => {
+                    if (cell.type === 'code') {
+                        return {
+                            cell_type: 'code',
+                            execution_count: null,
+                            metadata: {},
+                            outputs: [],
+                            source: cell.content.split('\n')
+                        };
+                    } else {
+                        return {
+                            cell_type: 'markdown',
+                            metadata: {},
+                            source: cell.content.split('\n')
+                        };
+                    }
+                }),
+                metadata: {
+                    kernelspec: {
+                        display_name: "Python 3",
+                        language: "python",
+                        name: "python3"
+                    },
+                    language_info: {
+                        codemirror_mode: {
+                            name: "ipython",
+                            version: 3
+                        },
+                        file_extension: ".py",
+                        mimetype: "text/x-python",
+                        name: "python",
+                        nbconvert_exports: {},
+                        pygments_lexer: "ipython3",
+                        version: "3.8.5"
+                    }
+                },
+                nbformat: 4,
+                nbformat_minor: 4
+            };
+
+            // Create and trigger download
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(notebookData, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", notebook.name);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        // Notebook management
+        function createNewNotebook(name = null) {
+            if (!notebookCreationEnabled) {
+                alert("Kernel is still loading. Please wait a moment and try again.");
+                return null;
+            }
+            
+            const notebookId = `notebook-${notebookCounter}`;
+            const notebookName = name || `notebook${notebookCounter}.ipynb`;
+            
+            // Create notebook data structure
+            notebooks[notebookId] = {
+                id: notebookId,
+                name: notebookName,
+                cells: [],
+                activeCell: null
+            };
+            
+            // Add to notebook history
+            notebookHistory.push(notebookId);
+            
+            // Create tab
+            const tabHTML = `
+                <div class="workspace-tab active" data-notebook="${notebookId}">
+                    ${notebookName}
+                    <span class="tab-close">×</span>
+                </div>
+            `;
+            
+            document.getElementById('workspace-tabs').insertAdjacentHTML('beforeend', tabHTML);
+            
+            // Create notebook content area
+            const contentHTML = `
+                <div class="notebook-content" id="${notebookId}-content" style="display: block;">
+                    <!-- Cells will be added here -->
+                </div>
+            `;
+            
+            document.getElementById('workspace-content').insertAdjacentHTML('beforeend', contentHTML);
+            
+            // Hide empty notebook message
+            document.getElementById('empty-notebook').style.display = 'none';
+            
+            // Set as active notebook
+            setActiveNotebook(notebookId);
+            
+            // Add event listeners for the tab
+            const tabElement = document.querySelector(`[data-notebook="${notebookId}"]`);
+            tabElement.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('tab-close')) {
+                    setActiveNotebook(notebookId);
+                }
+            });
+            
+            tabElement.querySelector('.tab-close').addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeNotebook(notebookId);
+            });
+            
+            // Create initial empty cell
+            createCodeCell(notebookId, '');
+            
+            notebookCounter++;
+            
+            // Save to localStorage
+            saveNotebooksToLocalStorage();
+            
+            // Update running tasks
+            updateRunningTasks();
+            
+            return notebookId;
+        }
+
+        function setActiveNotebook(notebookId) {
+            // Deactivate current notebook
+            if (activeNotebook) {
+                document.querySelector(`[data-notebook="${activeNotebook}"]`).classList.remove('active');
+                document.getElementById(`${activeNotebook}-content`).style.display = 'none';
+            }
+            
+            // Activate new notebook
+            activeNotebook = notebookId;
+            document.querySelector(`[data-notebook="${notebookId}"]`).classList.add('active');
+            document.getElementById(`${notebookId}-content`).style.display = 'block';
+            
+            // Update notebook history - move to front
+            const index = notebookHistory.indexOf(notebookId);
+            if (index > -1) {
+                notebookHistory.splice(index, 1);
+            }
+            notebookHistory.push(notebookId);
+            
+            // Save to localStorage
+            saveNotebooksToLocalStorage();
+        }
+
+        function closeNotebook(notebookId) {
+            // Remove notebook from data
+            delete notebooks[notebookId];
+            
+            // Remove from history
+            const index = notebookHistory.indexOf(notebookId);
+            if (index > -1) {
+                notebookHistory.splice(index, 1);
+            }
+            
+            // Remove tab and content
+            document.querySelector(`[data-notebook="${notebookId}"]`).remove();
+            document.getElementById(`${notebookId}-content`).remove();
+            
+            // Activate another notebook if available
+            if (notebookHistory.length > 0) {
+                // Get the most recently active notebook from history
+                const lastActiveNotebook = notebookHistory[notebookHistory.length - 1];
+                if (notebooks[lastActiveNotebook]) {
+                    setActiveNotebook(lastActiveNotebook);
+                } else {
+                    // If the last one doesn't exist, try the first available
+                    const remainingNotebooks = Object.keys(notebooks);
+                    if (remainingNotebooks.length > 0) {
+                        setActiveNotebook(remainingNotebooks[0]);
+                    } else {
+                        // Show empty notebook message
+                        document.getElementById('empty-notebook').style.display = 'flex';
+                        activeNotebook = null;
+                    }
+                }
+            } else {
+                // Show empty notebook message
+                document.getElementById('empty-notebook').style.display = 'flex';
+                activeNotebook = null;
+            }
+            
+            // Save to localStorage
+            saveNotebooksToLocalStorage();
+            
+            // Update running tasks
+            updateRunningTasks();
+        }
+
+        // Cell management
+        function createCodeCell(notebookId, content = '', cellId = null) {
+            const notebook = notebooks[notebookId];
+            const cellIdToUse = cellId || `cell-${notebookId}-${notebook.cells.length + 1}`;
+            
+            const cellHTML = `
+                <div class="notebook-cell code-cell new-cell" id="${cellIdToUse}" data-notebook="${notebookId}">
+                    <div class="cell-timeline"></div>
+                    <div class="cell-header">
+                        <div class="cell-left">
+                            <span class="cell-number">[${notebook.cells.length + 1}]</span>
+                            <span class="cell-type">Code</span>
+                        </div>
+                        <div class="cell-actions">
+                            <button class="cell-action primary tooltip run-cell" data-cell="${cellIdToUse}" title="Run cell (Ctrl+Enter)">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="cell-action tooltip add-cell-above" data-cell="${cellIdToUse}" title="Add cell above">
+                                <i class="fas fa-arrow-up"></i>
+                            </button>
+                            <button class="cell-action tooltip add-cell-below" data-cell="${cellIdToUse}" title="Add cell below">
+                                <i class="fas fa-arrow-down"></i>
+                            </button>
+                            <button class="cell-action warning tooltip change-cell-type" data-cell="${cellIdToUse}" title="Change to markdown">
+                                <i class="fas fa-code"></i>
+                            </button>
+                            <button class="cell-action danger tooltip delete-cell" data-cell="${cellIdToUse}" title="Delete cell">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="cell-content">
+                        <textarea class="code-input" id="${cellIdToUse}-input" placeholder="Enter Python code here">${content}</textarea>
+                    </div>
+                    <div class="cell-output" id="${cellIdToUse}-output"></div>
+                </div>
+            `;
+            
+            const notebookContent = document.getElementById(`${notebookId}-content`);
+            notebookContent.insertAdjacentHTML('beforeend', cellHTML);
+            
+            // Add cell to notebook data
+            notebook.cells.push({
+                id: cellIdToUse,
+                type: 'code',
+                content: content
+            });
+            
+            // Add event listeners for the new cell
+            const cellElement = document.getElementById(cellIdToUse);
+            const textarea = document.getElementById(`${cellIdToUse}-input`);
+            
+            // Auto-expand the textarea initially
+            setTimeout(() => {
+                autoExpandTextarea(textarea);
+            }, 10);
+            
+            // NEW: Improved auto-closing brackets and quotes with proper indentation
+            textarea.addEventListener('keydown', function(e) {
+                handleImprovedAutoClosing(e, this);
+                
+                // Auto-expand after a short delay to ensure content is updated
+                setTimeout(() => {
+                    autoExpandTextarea(this);
+                }, 10);
+            });
+            
+            // Update content on input and auto-expand
+            textarea.addEventListener('input', function() {
+                // Update notebook data
+                const cellIndex = notebook.cells.findIndex(cell => cell.id === cellIdToUse);
+                if (cellIndex !== -1) {
+                    notebook.cells[cellIndex].content = this.value;
+                }
+                
+                // Auto-expand the textarea
+                autoExpandTextarea(this);
+                
+                // Save to localStorage
+                saveNotebooksToLocalStorage();
+            });
+            
+            // Cell focus management
+            textarea.addEventListener('focus', function() {
+                setActiveCell(cellIdToUse);
+                this.classList.add('focus-glow');
+                setTimeout(() => {
+                    this.classList.remove('focus-glow');
+                }, 600);
+            });
+            
+            // Cell actions
+            cellElement.querySelector('.run-cell').addEventListener('click', () => runCell(cellIdToUse));
+            cellElement.querySelector('.add-cell-above').addEventListener('click', () => addCellAbove(cellIdToUse));
+            cellElement.querySelector('.add-cell-below').addEventListener('click', () => addCellBelow(cellIdToUse));
+            cellElement.querySelector('.change-cell-type').addEventListener('click', () => changeCellType(cellIdToUse));
+            cellElement.querySelector('.delete-cell').addEventListener('click', () => deleteCell(cellIdToUse));
+            
+            return cellIdToUse;
+        }
+
+        // NEW: Improved auto-closing brackets and quotes with proper indentation
+        function handleImprovedAutoClosing(e, textarea) {
+            const cursorPos = textarea.selectionStart;
+            const value = textarea.value;
+            
+            // Handle Enter key for auto-indentation
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                
+                // Get the current line
+                const lineStart = value.lastIndexOf('\n', cursorPos - 1) + 1;
+                const currentLine = value.substring(lineStart, cursorPos);
+                
+                // Calculate current indentation
+                const indentMatch = currentLine.match(/^(\s*)/);
+                const currentIndent = indentMatch ? indentMatch[1] : '';
+                
+                // Check if we're inside brackets/parentheses/braces
+                const beforeCursor = value.substring(0, cursorPos);
+                const afterCursor = value.substring(cursorPos);
+                
+                // Count open and close brackets
+                const openBrackets = (beforeCursor.match(/\(/g) || []).length;
+                const closeBrackets = (beforeCursor.match(/\)/g) || []).length;
+                const openBraces = (beforeCursor.match(/{/g) || []).length;
+                const closeBraces = (beforeCursor.match(/}/g) || []).length;
+                const openSquare = (beforeCursor.match(/\[/g) || []).length;
+                const closeSquare = (beforeCursor.match(/\]/g) || []).length;
+                
+                // Check if we're at the end of a line that ends with a colon (Python block)
+                const endsWithColon = currentLine.trim().endsWith(':');
+                
+                let newText = '\n';
+                
+                // Add extra indentation if inside brackets or after colon
+                if (openBrackets > closeBrackets || openBraces > closeBraces || openSquare > closeSquare || endsWithColon) {
+                    newText += currentIndent + '    ';
+                    
+                    // If we're inside brackets and the next character is a closing bracket,
+                    // add a second line with the original indentation
+                    const nextChar = afterCursor.charAt(0);
+                    if ([')', '}', ']'].includes(nextChar)) {
+                        newText += '\n' + currentIndent;
+                        // Move cursor to the middle line
+                        textarea.value = beforeCursor + newText + afterCursor;
+                        textarea.selectionStart = textarea.selectionEnd = cursorPos + currentIndent.length + 5;
+                        return;
+                    }
+                } else {
+                    newText += currentIndent;
+                }
+                
+                textarea.value = beforeCursor + newText + afterCursor;
+                textarea.selectionStart = textarea.selectionEnd = cursorPos + newText.length;
+                return;
+            }
+            
+            // Handle Tab key for indentation
+            if (e.key === 'Tab' && !e.ctrlKey && !e.altKey) {
+                e.preventDefault();
+                
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                
+                if (start === end) {
+                    // No selection, just insert 4 spaces
+                    textarea.value = value.substring(0, start) + '    ' + value.substring(end);
+                    textarea.selectionStart = textarea.selectionEnd = start + 4;
+                } else {
+                    // Multiple lines selected, indent each line
+                    const lines = value.substring(start, end).split('\n');
+                    const indentedLines = lines.map(line => '    ' + line);
+                    textarea.value = value.substring(0, start) + indentedLines.join('\n') + value.substring(end);
+                    textarea.selectionStart = start;
+                    textarea.selectionEnd = start + indentedLines.join('\n').length;
+                }
+                return;
+            }
+            
+            // Auto-closing pairs
+            const autoClosePairs = {
+                '(': ')',
+                '[': ']',
+                '{': '}',
+                "'": "'",
+                '"': '"',
+                '`': '`'
+            };
+            
+            if (autoClosePairs[e.key] && !e.ctrlKey && !e.altKey) {
+                e.preventDefault();
+                
+                const pair = autoClosePairs[e.key];
+                textarea.value = value.substring(0, cursorPos) + e.key + pair + value.substring(cursorPos);
+                textarea.selectionStart = textarea.selectionEnd = cursorPos + 1;
+                return;
+            }
+            
+            // Skip over closing character if it's already there
+            if ([')', ']', '}', "'", '"', '`'].includes(e.key) && !e.ctrlKey && !e.altKey) {
+                if (value.charAt(cursorPos) === e.key) {
+                    e.preventDefault();
+                    textarea.selectionStart = textarea.selectionEnd = cursorPos + 1;
+                    return;
+                }
+            }
+            
+            // Auto-complete triple quotes for docstrings
+            if (e.key === "'" && value.substring(cursorPos - 2, cursorPos) === "''") {
+                e.preventDefault();
+                textarea.value = value.substring(0, cursorPos) + "'" + value.substring(cursorPos);
+                textarea.selectionStart = textarea.selectionEnd = cursorPos + 1;
+                return;
+            }
+            
+            if (e.key === '"' && value.substring(cursorPos - 2, cursorPos) === '""') {
+                e.preventDefault();
+                textarea.value = value.substring(0, cursorPos) + '"' + value.substring(cursorPos);
+                textarea.selectionStart = textarea.selectionEnd = cursorPos + 1;
+                return;
+            }
+        }
+
+        // Handle AI Code Completion - Now with context from above cells
+        async function handleAICodeCompletion(cellId, prompt) {
+            const cellElement = document.getElementById(cellId);
+            const textarea = document.getElementById(`${cellId}-input`);
+            const outputElement = document.getElementById(`${cellId}-output`);
+            const runButton = cellElement.querySelector('.run-cell');
+            const notebookId = cellElement.getAttribute('data-notebook');
+            
+            // Get context from above cells
+            const context = getCodeContext(notebookId, cellId);
+            
+            // Show loading state
+            cellElement.classList.add('cell-running');
+            runButton.disabled = true;
+            outputElement.innerHTML = '<span class="loading"></span> Generating code with AI...';
+            outputElement.classList.add('fade-in');
+            
+            try {
+                const generatedCode = await getAICodeCompletion(prompt, context);
+                
+                // Replace the @ line with generated code
+                const currentContent = textarea.value;
+                const newContent = currentContent.replace(/^@.*$/gm, generatedCode);
+                textarea.value = newContent;
+                
+                // Update notebook data
+                const notebook = notebooks[notebookId];
+                const cellIndex = notebook.cells.findIndex(cell => cell.id === cellId);
+                if (cellIndex !== -1) {
+                    notebook.cells[cellIndex].content = newContent;
+                }
+                
+                // Auto-expand the textarea
+                autoExpandTextarea(textarea);
+                
+                // Show success message
+                outputElement.innerHTML = '<em>✅ AI code generation completed. Code inserted above.</em>';
+                
+                // Save to localStorage
+                saveNotebooksToLocalStorage();
+                
+            } catch (error) {
+                console.error('Error in AI code completion:', error);
+                outputElement.innerHTML = `<pre class="output-error">AI Error: ${error.message}</pre>`;
+            } finally {
+                // Remove running state
+                cellElement.classList.remove('cell-running');
+                runButton.disabled = false;
+            }
+        }
+
+        function createMarkdownCell(notebookId, content = '', cellId = null) {
+            const notebook = notebooks[notebookId];
+            const cellIdToUse = cellId || `cell-${notebookId}-${notebook.cells.length + 1}`;
+            
+            const cellHTML = `
+                <div class="notebook-cell markdown-cell new-cell" id="${cellIdToUse}" data-notebook="${notebookId}">
+                    <div class="cell-timeline"></div>
+                    <div class="cell-header">
+                        <div class="cell-left">
+                            <span class="cell-number">[${notebook.cells.length + 1}]</span>
+                            <span class="cell-type">Markdown</span>
+                        </div>
+                        <div class="cell-actions">
+                            <button class="cell-action success tooltip render-markdown" data-cell="${cellIdToUse}" title="Render markdown">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="cell-action tooltip add-cell-above" data-cell="${cellIdToUse}" title="Add cell above">
+                                <i class="fas fa-arrow-up"></i>
+                            </button>
+                            <button class="cell-action tooltip add-cell-below" data-cell="${cellIdToUse}" title="Add cell below">
+                                <i class="fas fa-arrow-down"></i>
+                            </button>
+                            <button class="cell-action warning tooltip change-cell-type" data-cell="${cellIdToUse}" title="Change to code">
+                                <i class="fas fa-code"></i>
+                            </button>
+                            <button class="cell-action danger tooltip delete-cell" data-cell="${cellIdToUse}" title="Delete cell">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="cell-content">
+                        <textarea class="markdown-input" id="${cellIdToUse}-input" placeholder="Enter Markdown text here">${content}</textarea>
+                    </div>
+                    <div class="cell-output" id="${cellIdToUse}-output"></div>
+                </div>
+            `;
+            
+            const notebookContent = document.getElementById(`${notebookId}-content`);
+            notebookContent.insertAdjacentHTML('beforeend', cellHTML);
+            
+            // Add cell to notebook data
+            notebook.cells.push({
+                id: cellIdToUse,
+                type: 'markdown',
+                content: content
+            });
+            
+            // Add event listeners for the new cell
+            const cellElement = document.getElementById(cellIdToUse);
+            const textarea = document.getElementById(`${cellIdToUse}-input`);
+            
+            // Auto-expand the textarea initially
+            setTimeout(() => {
+                autoExpandTextarea(textarea);
+            }, 10);
+            
+            // Update content on input and auto-expand
+            textarea.addEventListener('input', function() {
+                const cellIndex = notebook.cells.findIndex(cell => cell.id === cellIdToUse);
+                if (cellIndex !== -1) {
+                    notebook.cells[cellIndex].content = this.value;
+                }
+                
+                // Auto-expand the textarea
+                autoExpandTextarea(this);
+                
+                // Save to localStorage
+                saveNotebooksToLocalStorage();
+            });
+            
+            // Cell focus management
+            textarea.addEventListener('focus', function() {
+                setActiveCell(cellIdToUse);
+                this.classList.add('focus-glow');
+                setTimeout(() => {
+                    this.classList.remove('focus-glow');
+                }, 600);
+            });
+            
+            // Cell actions
+            cellElement.querySelector('.render-markdown').addEventListener('click', () => renderMarkdown(cellIdToUse));
+            cellElement.querySelector('.add-cell-above').addEventListener('click', () => addCellAbove(cellIdToUse));
+            cellElement.querySelector('.add-cell-below').addEventListener('click', () => addCellBelow(cellIdToUse));
+            cellElement.querySelector('.change-cell-type').addEventListener('click', () => changeCellType(cellIdToUse));
+            cellElement.querySelector('.delete-cell').addEventListener('click', () => deleteCell(cellIdToUse));
+            
+            return cellIdToUse;
+        }
+
+        function setActiveCell(cellId) {
+            // Remove active class from all cells
+            document.querySelectorAll('.notebook-cell').forEach(cell => {
+                cell.classList.remove('active-cell');
+            });
+            
+            // Add active class to current cell
+            const cellElement = document.getElementById(cellId);
+            if (cellElement) {
+                cellElement.classList.add('active-cell');
+                activeCellId = cellId;
+            }
+        }
+
+        function addCellAbove(cellId) {
+            const cellElement = document.getElementById(cellId);
+            const notebookId = cellElement.getAttribute('data-notebook');
+            const notebook = notebooks[notebookId];
+            const index = notebook.cells.findIndex(cell => cell.id === cellId);
+            
+            if (index !== -1) {
+                const newCellId = createCodeCell(notebookId);
+                const newCellElement = document.getElementById(newCellId);
+                
+                // Move the new cell before the current one
+                cellElement.parentNode.insertBefore(newCellElement, cellElement);
+                
+                // Update the notebook cells array
+                const newCellData = notebook.cells.find(cell => cell.id === newCellId);
+                notebook.cells.splice(index, 0, newCellData);
+                
+                updateCellNumbers(notebookId);
+                
+                // Add glow animation to the new cell
+                newCellElement.classList.add('cell-glow');
+                setTimeout(() => {
+                    newCellElement.classList.remove('cell-glow');
+                }, 1000);
+                
+                // Save to localStorage
+                saveNotebooksToLocalStorage();
+            }
+        }
+
+        function addCellBelow(cellId) {
+            const cellElement = document.getElementById(cellId);
+            const notebookId = cellElement.getAttribute('data-notebook');
+            const notebook = notebooks[notebookId];
+            const index = notebook.cells.findIndex(cell => cell.id === cellId);
+            
+            if (index !== -1) {
+                const newCellId = createCodeCell(notebookId);
+                const newCellElement = document.getElementById(newCellId);
+                
+                // Move the new cell after the current one
+                cellElement.parentNode.insertBefore(newCellElement, cellElement.nextSibling);
+                
+                // Update the notebook cells array
+                const newCellData = notebook.cells.find(cell => cell.id === newCellId);
+                notebook.cells.splice(index + 1, 0, newCellData);
+                
+                updateCellNumbers(notebookId);
+                
+                // Add glow animation to the new cell
+                newCellElement.classList.add('cell-glow');
+                setTimeout(() => {
+                    newCellElement.classList.remove('cell-glow');
+                }, 1000);
+                
+                // Save to localStorage
+                saveNotebooksToLocalStorage();
+            }
+        }
+
+        function changeCellType(cellId) {
+            const cellElement = document.getElementById(cellId);
+            const notebookId = cellElement.getAttribute('data-notebook');
+            const notebook = notebooks[notebookId];
+            const cellIndex = notebook.cells.findIndex(cell => cell.id === cellId);
+            
+            if (cellIndex !== -1) {
+                const currentType = notebook.cells[cellIndex].type;
+                const content = notebook.cells[cellIndex].content;
+                
+                // Remove current cell
+                cellElement.parentNode.removeChild(cellElement);
+                notebook.cells.splice(cellIndex, 1);
+                
+                // Create new cell with opposite type
+                let newCellId;
+                if (currentType === 'code') {
+                    newCellId = createMarkdownCell(notebookId, content);
+                } else {
+                    newCellId = createCodeCell(notebookId, content);
+                }
+                
+                // Insert at the same position
+                const newCellElement = document.getElementById(newCellId);
+                const notebookContent = document.getElementById(`${notebookId}-content`);
+                const targetElement = notebookContent.children[cellIndex];
+                
+                if (targetElement) {
+                    notebookContent.insertBefore(newCellElement, targetElement);
+                } else {
+                    notebookContent.appendChild(newCellElement);
+                }
+                
+                // Update notebook data
+                const newCellData = notebook.cells.find(cell => cell.id === newCellId);
+                notebook.cells.splice(cellIndex, 0, newCellData);
+                
+                // Remove the duplicate entry
+                const duplicateIndex = notebook.cells.findIndex((cell, idx) => cell.id === newCellId && idx !== cellIndex);
+                if (duplicateIndex !== -1) {
+                    notebook.cells.splice(duplicateIndex, 1);
+                }
+                
+                updateCellNumbers(notebookId);
+                
+                // Add glow animation to the new cell
+                newCellElement.classList.add('cell-glow', 'bounce-in');
+                setTimeout(() => {
+                    newCellElement.classList.remove('cell-glow');
+                }, 1000);
+                
+                // Save to localStorage
+                saveNotebooksToLocalStorage();
+            }
+        }
+
+        function deleteCell(cellId) {
+            const cellElement = document.getElementById(cellId);
+            const notebookId = cellElement.getAttribute('data-notebook');
+            const notebook = notebooks[notebookId];
+            
+            if (notebook.cells.length <= 1) {
+                alert("You can't delete the last cell!");
+                return;
+            }
+            
+            const index = notebook.cells.findIndex(cell => cell.id === cellId);
+            if (index !== -1) {
+                // Add fade-out animation
+                cellElement.style.opacity = '0';
+                cellElement.style.transform = 'translateX(-20px)';
+                
+                setTimeout(() => {
+                    cellElement.parentNode.removeChild(cellElement);
+                    notebook.cells.splice(index, 1);
+                    updateCellNumbers(notebookId);
+                    
+                    // Save to localStorage
+                    saveNotebooksToLocalStorage();
+                }, 300);
+            }
+        }
+
+        function updateCellNumbers(notebookId) {
+            const notebook = notebooks[notebookId];
+            notebook.cells.forEach((cell, index) => {
+                const cellElement = document.getElementById(cell.id);
+                if (cellElement) {
+                    const cellNumber = cellElement.querySelector('.cell-number');
+                    cellNumber.textContent = `[${index + 1}]`;
+                }
+            });
+        }
+
+        // NEW: Improved output formatting for data structures
+        function formatOutput(output) {
+            // Check if output looks like a pandas DataFrame
+            if (output.includes('    ') && output.split('\n').length > 3) {
+                const lines = output.trim().split('\n');
+                
+                // Check if it has a header row and data rows
+                if (lines.length >= 2) {
+                    const header = lines[0];
+                    const dataRows = lines.slice(1);
+                    
+                    // Check if header and data rows have consistent column structure
+                    if (header.includes('    ') && dataRows.every(row => row.includes('    '))) {
+                        return formatAsDataFrame(lines);
+                    }
+                }
+            }
+            
+            // Check if output looks like a list or array
+            if (output.startsWith('[') && output.endsWith(']')) {
+                try {
+                    // Try to parse as JSON to format nicely
+                    const parsed = JSON.parse(output);
+                    if (Array.isArray(parsed)) {
+                        return `<div class="output-array">${JSON.stringify(parsed, null, 2)}</div>`;
+                    }
+                } catch (e) {
+                    // Not valid JSON, use regular formatting
+                }
+            }
+            
+            // Check if output looks like a dictionary
+            if (output.startsWith('{') && output.endsWith('}')) {
+                try {
+                    // Try to parse as JSON to format nicely
+                    const parsed = JSON.parse(output);
+                    if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+                        return `<div class="output-dict">${JSON.stringify(parsed, null, 2)}</div>`;
+                    }
+                } catch (e) {
+                    // Not valid JSON, use regular formatting
+                }
+            }
+            
+            // Default formatting
+            return `<pre class="output-stdout">${output}</pre>`;
+        }
+
+        // Format output as a DataFrame-like table
+        function formatAsDataFrame(lines) {
+            const rows = lines.map(line => {
+                // Split by multiple spaces to get columns, but preserve spaces within values
+                const columns = line.split(/\s{2,}/).filter(col => col.trim() !== '');
+                return columns;
+            });
+            
+            // Find max columns
+            const maxCols = Math.max(...rows.map(row => row.length));
+            
+            let tableHTML = '<table class="output-dataframe">';
+            
+            // Add header row
+            if (rows.length > 0) {
+                tableHTML += '<thead><tr>';
+                for (let i = 0; i < maxCols; i++) {
+                    tableHTML += `<th>${rows[0][i] || ''}</th>`;
+                }
+                tableHTML += '</tr></thead>';
+            }
+            
+            // Add data rows
+            if (rows.length > 1) {
+                tableHTML += '<tbody>';
+                for (let i = 1; i < rows.length; i++) {
+                    tableHTML += '<tr>';
+                    for (let j = 0; j < maxCols; j++) {
+                        tableHTML += `<td>${rows[i][j] || ''}</td>`;
+                    }
+                    tableHTML += '</tr>';
+                }
+                tableHTML += '</tbody>';
+            }
+            
+            tableHTML += '</table>';
+            return tableHTML;
+        }
+
+        // Run a code cell
+        async function runCell(cellId) {
+            if (!kernelReady) {
+                alert("Python kernel is not ready yet. Please wait.");
+                return;
+            }
+            
+            const cellElement = document.getElementById(cellId);
+            const codeInput = document.getElementById(`${cellId}-input`);
+            const outputElement = document.getElementById(`${cellId}-output`);
+            const runButton = cellElement.querySelector('.run-cell');
+            
+            const code = codeInput.value.trim();
+            if (!code) {
+                outputElement.innerHTML = '<em>No code to execute</em>';
+                return;
+            }
+            
+            // Check if the code starts with @ for AI completion
+            if (code.startsWith('@')) {
+                const prompt = code.substring(1).trim();
+                if (prompt) {
+                    await handleAICodeCompletion(cellId, prompt);
+                    return;
+                }
+            }
+            
+            // Show running state
+            cellElement.classList.add('cell-running');
+            runButton.classList.add('run-animation');
+            runButton.disabled = true;
+            
+            // Show loading indicator
+            outputElement.innerHTML = '<span class="loading"></span> Executing...';
+            outputElement.classList.add('fade-in');
+            
+            try {
+                // Capture output
+                let outputText = '';
+                const captureOutput = (text) => {
+                    outputText += text;
+                };
+                
+                // Create output capture in Python
+                const outputCapture = pyodide.globals.get('create_output_capture')(captureOutput);
+                pyodide.globals.get('sys').stdout = outputCapture;
+                pyodide.globals.get('sys').stderr = outputCapture;
+                
+                // Execute the code
+                const result = await pyodide.runPythonAsync(code);
+                
+                // Check if the code called plt.show() and returned an image
+                if (result && typeof result === 'string' && result.startsWith('data:image/png;base64')) {
+                    outputElement.innerHTML = `<img class="output-image" src="${result}" />`;
+                } else if (outputText.trim()) {
+                    // Use improved output formatting
+                    outputElement.innerHTML = formatOutput(outputText);
+                } else {
+                    outputElement.innerHTML = '<em>Code executed successfully. No output.</em>';
+                }
+                
+                // Restore stdout and stderr
+                pyodide.globals.get('sys').stdout = pyodide.globals.get('sys').__stdout__;
+                pyodide.globals.get('sys').stderr = pyodide.globals.get('sys').__stderr__;
+                
+            } catch (error) {
+                outputElement.innerHTML = `<pre class="output-error">Error: ${error.message}</pre>`;
+            } finally {
+                // Remove running state
+                cellElement.classList.remove('cell-running');
+                cellElement.classList.add('cell-executed');
+                runButton.classList.remove('run-animation');
+                runButton.disabled = false;
+                
+                // Add output expansion animation
+                outputElement.classList.add('output-expand');
+                
+                // Reset animation after a delay
+                setTimeout(() => {
+                    cellElement.classList.remove('cell-executed');
+                    outputElement.classList.remove('output-expand');
+                }, 2000);
+            }
+        }
+
+        // Render markdown cell
+        function renderMarkdown(cellId) {
+            const cellElement = document.getElementById(cellId);
+            const markdownInput = document.getElementById(`${cellId}-input`);
+            const outputElement = document.getElementById(`${cellId}-output`);
+            const renderButton = cellElement.querySelector('.render-markdown');
+            
+            const markdown = markdownInput.value.trim();
+            if (!markdown) {
+                outputElement.innerHTML = '<em>No markdown to render</em>';
+                return;
+            }
+            
+            // Add animation to button
+            renderButton.classList.add('run-animation');
+            
+            // Simple markdown to HTML conversion
+            let html = markdown
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+                .replace(/\*(.*)\*/gim, '<em>$1</em>')
+                .replace(/`(.*?)`/gim, '<code>$1</code>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+            
+            outputElement.innerHTML = `<div class="markdown-rendered fade-in"><p>${html}</p></div>`;
+            outputElement.classList.add('output-expand');
+            
+            // Remove animation after a delay
+            setTimeout(() => {
+                renderButton.classList.remove('run-animation');
+                outputElement.classList.remove('output-expand');
+            }, 500);
+        }
+
+        // Run all cells
+        function runAllCells() {
+            if (!activeNotebook) return;
+            
+            const notebook = notebooks[activeNotebook];
+            notebook.cells.forEach(cell => {
+                if (cell.type === 'code') {
+                    runCell(cell.id);
+                } else if (cell.type === 'markdown') {
+                    renderMarkdown(cell.id);
+                }
+            });
+        }
+
+        // Clear all outputs
+        function clearAllOutputs() {
+            if (!activeNotebook) return;
+            
+            const notebook = notebooks[activeNotebook];
+            notebook.cells.forEach(cell => {
+                const outputElement = document.getElementById(`${cell.id}-output`);
+                if (outputElement) {
+                    outputElement.innerHTML = '';
+                }
+            });
+        }
+
+        // Keyboard shortcuts
+        function handleKeyboardShortcuts(e) {
+            // Ctrl+Enter: Run current cell and stay
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                if (activeCellId) {
+                    const cellElement = document.getElementById(activeCellId);
+                    if (cellElement.classList.contains('code-cell')) {
+                        runCell(activeCellId);
+                    } else if (cellElement.classList.contains('markdown-cell')) {
+                        renderMarkdown(activeCellId);
+                    }
+                }
+            }
+            
+            // Shift+Enter: Run current cell and move to next
+            if (e.shiftKey && e.key === 'Enter') {
+                e.preventDefault();
+                if (activeCellId) {
+                    const cellElement = document.getElementById(activeCellId);
+                    const notebookId = cellElement.getAttribute('data-notebook');
+                    const notebook = notebooks[notebookId];
+                    const currentIndex = notebook.cells.findIndex(cell => cell.id === activeCellId);
+                    
+                    // Run current cell
+                    if (cellElement.classList.contains('code-cell')) {
+                        runCell(activeCellId);
+                    } else if (cellElement.classList.contains('markdown-cell')) {
+                        renderMarkdown(activeCellId);
+                    }
+                    
+                    // Move to next cell or create one
+                    if (currentIndex < notebook.cells.length - 1) {
+                        // Focus next cell
+                        const nextCellId = notebook.cells[currentIndex + 1].id;
+                        const nextCell = document.getElementById(nextCellId);
+                        const input = nextCell.querySelector('.code-input') || nextCell.querySelector('.markdown-input');
+                        input.focus();
+                    } else {
+                        // Create new cell and focus it
+                        const newCellId = createCodeCell(notebookId);
+                        const newCell = document.getElementById(newCellId);
+                        setTimeout(() => {
+                            newCell.querySelector('.code-input').focus();
+                        }, 100);
+                    }
+                }
+            }
+            
+            // Ctrl+S: Save notebook
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveNotebooksToLocalStorage();
+            }
+        }
+
+        // Toggle theme function
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode');
+            
+            // Update theme button text
+            const themeText = document.getElementById('theme-text');
+            const themeIcon = document.querySelector('#theme-toggle i');
+            
+            if (isDarkMode) {
+                themeText.textContent = 'Light';
+                themeIcon.className = 'fas fa-sun';
+            } else {
+                themeText.textContent = 'Dark Mode';
+                themeIcon.className = 'fas fa-moon';
+            }
+            
+            // Update theme in all dropdowns
+            const dropdowns = document.querySelectorAll('.dropdown-menu, .cell-dropdown-content');
+            dropdowns.forEach(dropdown => {
+                dropdown.style.display = 'none';
+            });
+        }
+
+        // AI Assistant Functions
+        function openAIAssistant() {
+            document.getElementById('ai-modal').classList.add('active');
+        }
+
+        function closeAIAssistant() {
+            const modal = document.getElementById('ai-modal');
+            modal.classList.add('closing');
+            
+            setTimeout(() => {
+                modal.classList.remove('active', 'closing');
+            }, 300);
+        }
+
+        function addAIMessage(message, role) {
+            const chatMessages = document.getElementById('ai-chat-messages');
+            const messageElement = document.createElement('div');
+            messageElement.className = `ai-message ${role}`;
+            
+            if (role === 'assistant') {
+                messageElement.innerHTML = formatAIMessage(message);
+            } else {
+                messageElement.textContent = message;
+            }
+            
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showAITypingIndicator() {
+            const chatMessages = document.getElementById('ai-chat-messages');
+            const typingElement = document.createElement('div');
+            typingElement.className = 'ai-typing-indicator';
+            typingElement.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+            chatMessages.appendChild(typingElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return typingElement;
+        }
+
+        // NEW: Handle Cell Reference button
+        function handleAICellReference() {
+            if (!activeNotebook) {
+                alert("No active notebook to reference. Please open or create a notebook first.");
+                return;
+            }
+            
+            const allCode = getAllNotebookCode(activeNotebook);
+            
+            if (!allCode.trim()) {
+                alert("No code found in the current notebook.");
+                return;
+            }
+            
+            const inputElement = document.getElementById('ai-input');
+            inputElement.value = `Here is the code from my notebook:\n\n${allCode}\n\n`;
+            inputElement.focus();
+            
+            // Auto-expand the input
+            inputElement.style.height = 'auto';
+            inputElement.style.height = (inputElement.scrollHeight) + 'px';
+            
+            addAIMessage("I've loaded the code from your notebook. Please ask your question about this code.", 'system');
+        }
+
+        async function handleAISendMessage() {
+            const inputElement = document.getElementById('ai-input');
+            const sendButton = document.getElementById('ai-send-button');
+            const message = inputElement.value.trim();
+            
+            if (!message) return;
+            
+            // Clear input and disable send button
+            inputElement.value = '';
+            sendButton.disabled = true;
+            
+            // Add user message to chat
+            addAIMessage(message, 'user');
+            
+            // Show typing indicator
+            const typingIndicator = showAITypingIndicator();
+            
+            try {
+                // Send message to AI
+                const response = await sendAIChatMessage(message);
+                
+                // Remove typing indicator
+                typingIndicator.remove();
+                
+                // Add AI response to chat
+                addAIMessage(response, 'assistant');
+            } catch (error) {
+                // Remove typing indicator
+                typingIndicator.remove();
+                
+                // Show error message
+                addAIMessage(`Sorry, I encountered an error: ${error.message}`, 'assistant');
+            } finally {
+                // Re-enable send button
+                sendButton.disabled = false;
+                
+                // Reset input height
+                inputElement.style.height = 'auto';
+            }
+        }
+
+        // Package Manager Functions
+        function openPackageManager() {
+            document.getElementById('package-modal').classList.add('active');
+        }
+
+        function closePackageManager() {
+            const modal = document.getElementById('package-modal');
+            modal.classList.add('closing');
+            
+            setTimeout(() => {
+                modal.classList.remove('active', 'closing');
+            }, 300);
+        }
+
+        function handlePackageInstall() {
+            const packageInput = document.getElementById('package-input');
+            const packageName = packageInput.value.trim();
+            
+            if (!packageName) {
+                alert("Please enter a package name");
+                return;
+            }
+            
+            installPackage(packageName);
+            packageInput.value = '';
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Pyodide
+            initializePyodide();
+            
+            // Show empty notebook message initially
+            document.getElementById('empty-notebook').style.display = 'flex';
+            
+            // Set up event listeners
+            document.querySelector('.sidebar-toggle').addEventListener('click', function() {
+                document.getElementById('sidebar').classList.toggle('sidebar-visible');
+            });
+            
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            
+            // Sidebar tabs
+            document.querySelectorAll('.sidebar-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    
+                    // Update active tab
+                    document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show corresponding pane
+                    document.querySelectorAll('.sidebar-pane').forEach(pane => {
+                        pane.style.display = 'none';
+                    });
+                    document.getElementById(`${tabName}-pane`).style.display = 'block';
+                });
+            });
+            
+            // File menu actions
+            // Removed New Notebook and New File event listeners
+            document.getElementById('download-notebook').addEventListener('click', function() {
+                if (activeNotebook) {
+                    downloadNotebook(activeNotebook);
+                } else {
+                    alert("No active notebook to download");
+                }
+            });
+            
+            // Removed Close Tab event listener
+            
+            // Edit menu actions
+            document.getElementById('cut-cell').addEventListener('click', function() {
+                if (activeCellId) {
+                    // Implementation would go here
+                    alert("Cut cell functionality would be implemented here");
+                }
+            });
+            
+            document.getElementById('copy-cell').addEventListener('click', function() {
+                if (activeCellId) {
+                    // Implementation would go here
+                    alert("Copy cell functionality would be implemented here");
+                }
+            });
+            
+            document.getElementById('paste-cell').addEventListener('click', function() {
+                if (activeCellId) {
+                    // Implementation would go here
+                    alert("Paste cell functionality would be implemented here");
+                }
+            });
+            
+            document.getElementById('delete-cell').addEventListener('click', function() {
+                if (activeCellId) {
+                    deleteCell(activeCellId);
+                }
+            });
+            
+            document.getElementById('find-replace').addEventListener('click', function() {
+                alert("Find and Replace feature would open here in a full implementation.");
+            });
+            
+            // View menu actions
+            document.getElementById('toggle-sidebar').addEventListener('click', function() {
+                document.getElementById('sidebar').classList.toggle('sidebar-collapsed');
+            });
+            
+            document.getElementById('zen-mode').addEventListener('click', function() {
+                document.body.classList.toggle('zen-mode');
+                alert("Zen mode toggled. This would hide all UI except cells in a full implementation.");
+            });
+            
+            // Run menu actions
+            document.getElementById('run-cell').addEventListener('click', function() {
+                if (activeCellId) {
+                    const cellElement = document.getElementById(activeCellId);
+                    if (cellElement.classList.contains('code-cell')) {
+                        runCell(activeCellId);
+                    } else if (cellElement.classList.contains('markdown-cell')) {
+                        renderMarkdown(activeCellId);
+                    }
+                }
+            });
+            
+            document.getElementById('run-all-cells').addEventListener('click', runAllCells);
+            
+            document.getElementById('restart-kernel').addEventListener('click', function() {
+                if (confirm("Restart kernel? All variables will be lost.")) {
+                    initializePyodide();
+                }
+            });
+            
+            // Kernel menu actions
+            // Removed Interrupt Kernel event listener
+            
+            document.getElementById('restart-kernel-menu').addEventListener('click', function() {
+                if (confirm("Restart kernel? All variables will be lost.")) {
+                    initializePyodide();
+                }
+            });
+            
+            document.getElementById('shutdown-kernel').addEventListener('click', function() {
+                if (confirm("Shutdown kernel? All variables will be lost.")) {
+                    kernelReady = false;
+                    document.getElementById('kernel-state').textContent = 'Shutdown';
+                    document.getElementById('kernel-status').classList.remove('kernel-status-ready');
+                }
+            });
+            
+            document.getElementById('change-kernel').addEventListener('click', function() {
+                alert("Kernel selection dialog would open here in a full implementation.");
+            });
+            
+            document.getElementById('install-library').addEventListener('click', openPackageManager);
+            
+            // Help menu actions
+            document.getElementById('about').addEventListener('click', function() {
+                alert("JupyterLab Interface\n\nA fully functional JupyterLab interface running in your browser with Pyodide.\n\nCreated with HTML, CSS, and JavaScript.");
+            });
+            
+            document.getElementById('keyboard-shortcuts').addEventListener('click', function() {
+                alert("Keyboard Shortcuts:\n\nCtrl+Enter: Run current cell and stay\nShift+Enter: Run current cell and move to next\nCtrl+S: Save notebook\n\nAdditional shortcuts may be available in the menu.");
+            });
+            
+            document.getElementById('user-guide').addEventListener('click', function() {
+                alert("User guide would open here in a full implementation.");
+            });
+            
+            document.getElementById('python-reference').addEventListener('click', function() {
+                alert("Python reference would open here in a full implementation.");
+            });
+            
+            // File browser actions
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const fileName = this.getAttribute('data-file');
+                    createNewNotebook(fileName);
+                });
+            });
+            
+            // Command palette actions
+            // Removed New Notebook command event listener
+            
+            document.getElementById('cmd-run-all').addEventListener('click', runAllCells);
+            
+            document.getElementById('cmd-clear-outputs').addEventListener('click', clearAllOutputs);
+            
+            document.getElementById('cmd-download-notebook').addEventListener('click', function() {
+                if (activeNotebook) {
+                    downloadNotebook(activeNotebook);
+                } else {
+                    alert("No active notebook to download");
+                }
+            });
+            
+            document.getElementById('cmd-start-kernel').addEventListener('click', function() {
+                initializePyodide();
+            });
+            
+            document.getElementById('cmd-restart-kernel').addEventListener('click', function() {
+                if (confirm("Restart kernel? All variables will be lost.")) {
+                    initializePyodide();
+                }
+            });
+            
+            // Removed Interrupt Kernel command event listener
+            
+            document.getElementById('cmd-shutdown-kernel').addEventListener('click', function() {
+                if (confirm("Shutdown kernel? All variables will be lost.")) {
+                    kernelReady = false;
+                    document.getElementById('kernel-state').textContent = 'Shutdown';
+                    document.getElementById('kernel-status').classList.remove('kernel-status-ready');
+                }
+            });
+            
+            document.getElementById('cmd-toggle-theme').addEventListener('click', toggleTheme);
+            
+            // Floating action buttons
+            document.getElementById('add-cell-btn').addEventListener('click', function() {
+                if (activeNotebook) {
+                    const newCellId = createCodeCell(activeNotebook);
+                    const newCell = document.getElementById(newCellId);
+                    
+                    // Add glow animation to the new cell
+                    newCell.classList.add('cell-glow');
+                    setTimeout(() => {
+                        newCell.classList.remove('cell-glow');
+                    }, 1000);
+                } else {
+                    createNewNotebook();
+                }
+            });
+            
+            // AI Assistant button
+            document.getElementById('ai-assistant').addEventListener('click', openAIAssistant);
+            
+            // AI Assistant modal events
+            document.getElementById('ai-modal-close').addEventListener('click', closeAIAssistant);
+            
+            // NEW: Cell Reference button
+            document.getElementById('ai-reference-button').addEventListener('click', handleAICellReference);
+            
+            document.getElementById('ai-send-button').addEventListener('click', handleAISendMessage);
+            
+            document.getElementById('ai-input').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAISendMessage();
+                }
+            });
+            
+            // Auto-expand AI input
+            document.getElementById('ai-input').addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+            
+            // Close modal when clicking outside
+            document.getElementById('ai-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeAIAssistant();
+                }
+            });
+            
+            // Package Manager events
+            document.getElementById('package-modal-close').addEventListener('click', closePackageManager);
+            
+            document.getElementById('package-install-button').addEventListener('click', handlePackageInstall);
+            
+            document.getElementById('package-input').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handlePackageInstall();
+                }
+            });
+            
+            // Package action buttons
+            document.querySelectorAll('.package-action').forEach(button => {
+                button.addEventListener('click', function() {
+                    const packageName = this.getAttribute('data-package');
+                    installPackage(packageName);
+                });
+            });
+            
+            // Close package modal when clicking outside
+            document.getElementById('package-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closePackageManager();
+                }
+            });
+            
+            // Create first notebook button
+            document.getElementById('create-first-notebook').addEventListener('click', function() {
+                createNewNotebook();
+            });
+            
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', handleKeyboardShortcuts);
+        });
+    </script>
+</body>
+</html>
