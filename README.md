@@ -1,4 +1,4 @@
-# 🚀 JupyterLab Interface — Browser-Based Python Notebook with AI Assistant 🤖
+# 🚀 PyNotebook Site — Browser-Based Python Notebook with AI Assistant 🤖
 
 A revolutionary, **fully functional JupyterLab implementation** that runs entirely in your browser — enhanced with **AI-powered code completion** and an **intelligent assistant** for real-time programming support. Experience the fusion of **Python**, **WebAssembly**, and **Artificial Intelligence**, all within a seamless, elegant interface.
 
